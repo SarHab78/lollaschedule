@@ -131,17 +131,33 @@ export async function getRecentlyPlayed(accessToken: string): Promise<TopTrack[]
 // to `max` so artists beyond your first 50 likes still get detected.
 export async function getSavedTracks(
   accessToken: string,
-  max = 500,
+  max = 5000,
 ): Promise<TopTrack[]> {
-  const out: TopTrack[] = [];
-  for (let offset = 0; offset < max; offset += 50) {
-    const data = await spotifyGet<{ items: { track: TopTrack }[]; next: string | null }>(
-      `/me/tracks?limit=50&offset=${offset}`,
-      accessToken,
-    );
-    out.push(...data.items.map((i) => i.track).filter(Boolean));
-    if (!data.next) break;
+  // First page tells us the library total, then fetch the rest concurrently
+  // (bounded) rather than 40 slow sequential round-trips.
+  const first = await spotifyGet<{ items: { track: TopTrack }[]; total: number }>(
+    `/me/tracks?limit=50&offset=0`,
+    accessToken,
+  );
+  const out: TopTrack[] = first.items.map((i) => i.track).filter(Boolean);
+  const total = Math.min(max, first.total);
+
+  const offsets: number[] = [];
+  for (let o = 50; o < total; o += 50) offsets.push(o);
+
+  const CONCURRENCY = 6;
+  let idx = 0;
+  async function worker() {
+    while (idx < offsets.length) {
+      const o = offsets[idx++];
+      const data = await spotifyGet<{ items: { track: TopTrack }[] }>(
+        `/me/tracks?limit=50&offset=${o}`,
+        accessToken,
+      );
+      out.push(...data.items.map((i) => i.track).filter(Boolean));
+    }
   }
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   return out;
 }
 

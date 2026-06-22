@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   buildTasteProfile,
   DEFAULT_TASTE_OPTIONS,
+  normalizeName,
   TasteOptions,
   TimeWindow,
 } from "@/lib/taste";
@@ -64,6 +65,18 @@ export default async function Schedule({ searchParams }: Props) {
     const arr = byDate.get(set.date) ?? [];
     arr.push(ui);
     byDate.set(set.date, arr);
+  }
+
+  // Debug provenance: for every lineup artist we DID detect in your listening,
+  // print their affinity + which signal caught them. Lets us confirm picks like
+  // Claire Rosinkranz are landing (and from where). Server console only.
+  const detected = [...scoredArtist.values()]
+    .filter((s) => s.directAffinity > 0)
+    .sort((a, b) => b.directAffinity - a.directAffinity);
+  console.log(`[schedule] ${detected.length}/${scoredArtist.size} lineup artists detected in your listening:`);
+  for (const s of detected) {
+    const src = [...(taste.sourcesByName.get(normalizeName(s.artist)) ?? [])].join(", ") || "—";
+    console.log(`  ${s.directAffinity.toFixed(2)}  ${s.tier.padEnd(9)} ${s.artist}  ←  ${src}`);
   }
 
   const days: DayData[] = lineup.dates.map((date) => ({
