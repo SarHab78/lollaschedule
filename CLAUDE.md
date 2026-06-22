@@ -22,6 +22,22 @@ Open **http://127.0.0.1:3000** → Connect Spotify → dashboard → "Build my s
   The Client ID is already set locally. App is registered at
   developer.spotify.com under this account.
 
+## Deployment (LIVE: https://lollaschedule.vercel.app)
+Deployed on Vercel via GitHub auto-deploy (push to `main` → deploy). It works
+in prod AND local because OAuth is now **host/protocol-aware**: `redirectUri(req)`
+/ `originFromRequest(req)` in lib/spotify.ts derive the origin from the request
+(`host` + `x-forwarded-proto`), and cookies set `secure` only on https. The PKCE
+redirect_uri must match exactly across /login and /callback — both derive it the
+same way, so don't reintroduce a hardcoded URL.
+- **Spotify dashboard** must list BOTH redirect URIs: `http://127.0.0.1:3000/callback`
+  (dev) and `https://lollaschedule.vercel.app/callback` (prod).
+- **Vercel env**: `SPOTIFY_CLIENT_ID` must be set (Production scope) — a missing
+  var was the cause of a prod 500; /login now fails readably to
+  `/?error=missing_client_id` instead. Redeploy after changing env vars.
+- `SPOTIFY_REDIRECT_URI` is NOT needed in prod (derived from request).
+- enriched-cache.json is committed (warm), so reads work on Vercel's read-only
+  FS; cache writes fail silently (best-effort) — fine.
+
 ## Architecture / where things live
 ```
 app/
