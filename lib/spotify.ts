@@ -18,7 +18,19 @@ export function clientId(): string {
   return id;
 }
 
-export function redirectUri(): string {
+// The redirect URI must EXACTLY match one registered in the Spotify dashboard.
+// We derive it from the incoming request so the same code works on 127.0.0.1
+// locally AND on the deployed host (e.g. https://lollaschedule.vercel.app) —
+// Vercel sets `x-forwarded-proto: https`. Falls back to the env var, then loopback.
+export function originFromRequest(req: { headers: Headers }): string {
+  const host = req.headers.get("host");
+  if (!host) return "http://127.0.0.1:3000";
+  const proto = req.headers.get("x-forwarded-proto") ?? (host.startsWith("127.") || host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+export function redirectUri(req?: { headers: Headers }): string {
+  if (req) return `${originFromRequest(req)}/callback`;
   return process.env.SPOTIFY_REDIRECT_URI ?? "http://127.0.0.1:3000/callback";
 }
 
@@ -48,11 +60,12 @@ export type SpotifyTokens = {
 export async function exchangeCodeForTokens(
   code: string,
   verifier: string,
+  redirect: string,
 ): Promise<SpotifyTokens> {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: redirectUri(),
+    redirect_uri: redirect, // MUST match the redirect_uri used at /login exactly
     client_id: clientId(),
     code_verifier: verifier,
   });
