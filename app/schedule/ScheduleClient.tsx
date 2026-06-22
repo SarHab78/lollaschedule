@@ -24,18 +24,10 @@ type Friend = { name: string; ids: string[] };
 
 // Kept local (not imported from taste.ts) so the Node-only deps in that module
 // don't get pulled into the client bundle.
-const WINDOW_LABEL: Record<TimeWindow, string> = {
-  short_term: "Last 4 weeks",
+const WINDOW_LABEL: Partial<Record<TimeWindow, string>> = {
   medium_term: "Last 6 months",
   long_term: "All time",
 };
-type BoolKey = "useTopArtists" | "useTopTracks" | "useRecent" | "useSaved";
-const SOURCES: { key: BoolKey; label: string; param: string }[] = [
-  { key: "useTopArtists", label: "Top artists", param: "artists" },
-  { key: "useTopTracks", label: "Top tracks", param: "tracks" },
-  { key: "useRecent", label: "Recently played", param: "recent" },
-  { key: "useSaved", label: "Saved library", param: "saved" },
-];
 const FRIEND_COLORS = ["#ff8a5c", "#ffd35c", "#5cffd3", "#c98aff"];
 
 const TIER_COLOR: Record<Tier, string> = {
@@ -55,7 +47,6 @@ const DAY_START = 12 * 60;
 const DAY_END = 22 * 60;
 const PX_PER_MIN = 1.3;
 
-const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 function mins(iso: string): number {
   const [, t] = iso.split("T");
   const [h, m] = t.split(":").map(Number);
@@ -106,41 +97,28 @@ export default function ScheduleClient({
   const [active, setActive] = useState(0);
   const [missedOpen, setMissedOpen] = useState(true);
   const [locks, setLocks] = usePersisted<string[]>("lolla_locks", []);
-  const [excludes, setExcludes] = usePersisted<string[]>("lolla_excludes", []); // normalized names
   const [friends, setFriends] = usePersisted<Friend[]>("lolla_friends", []);
-  const [artistQuery, setArtistQuery] = useState("");
   const [friendName, setFriendName] = useState("");
   const [friendLink, setFriendLink] = useState("");
 
   const lockSet = useMemo(() => new Set(locks), [locks]);
-  const excludeSet = useMemo(() => new Set(excludes), [excludes]);
 
   const toggleLock = (id: string) =>
     setLocks((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const toggleExclude = (artist: string) => {
-    const k = norm(artist);
-    setExcludes((p) => (p.includes(k) ? p.filter((x) => x !== k) : [...p, k]));
-  };
 
-  const allArtists = useMemo(
-    () => [...new Set(days.flatMap((d) => d.sets.map((s) => s.artist)))].sort(),
-    [days],
-  );
   const validIds = useMemo(
     () => new Set(days.flatMap((d) => d.sets.map((s) => s.id))),
     [days],
   );
 
-  // Optimize each day, excluding filtered-out artists, honoring locked picks.
+  // Optimize each day, honoring locked picks.
   const itineraries = useMemo(() => {
     return days.map((d) => {
-      const plannable: PlannableSet[] = d.sets
-        .filter((s) => !excludeSet.has(norm(s.artist)))
-        .map((s) => ({ id: s.id, artist: s.artist, stage: s.stage, start: s.start, end: s.end, score: s.score }));
+      const plannable: PlannableSet[] = d.sets.map((s) => ({ id: s.id, artist: s.artist, stage: s.stage, start: s.start, end: s.end, score: s.score }));
       const chosen = optimizeDay(plannable, [...lockSet]);
       return { date: d.date, chosenIds: new Set(chosen.map((c) => c.id)) };
     });
-  }, [days, excludeSet, lockSet]);
+  }, [days, lockSet]);
 
   const day = days[active];
   const dayItin = itineraries[active];
@@ -161,7 +139,7 @@ export default function ScheduleClient({
     itineraries.forEach((it, di) => {
       const d = days[di];
       d.sets.forEach((s) => {
-        if (it.chosenIds.has(s.id) || excludeSet.has(norm(s.artist)) || s.tier === "wildcard") return;
+        if (it.chosenIds.has(s.id) || s.tier === "wildcard") return;
         const conflict = d.sets.find(
           (o) => it.chosenIds.has(o.id) && mins(o.start) < mins(s.end) && mins(o.end) > mins(s.start),
         );
@@ -169,12 +147,12 @@ export default function ScheduleClient({
       });
     });
     return rows.sort((a, b) => b.set.score - a.set.score);
-  }, [days, itineraries, excludeSet]);
+  }, [days, itineraries]);
 
   // ---- taste settings → server re-score via URL ----
-  const applyOptions = (next: TasteOptions) => {
-    const sources = SOURCES.filter((s) => next[s.key]).map((s) => s.param).join(",");
-    startTransition(() => router.push(`/schedule?window=${next.window}&sources=${sources}`));
+  // Always score on all signals; only the listening window is user-selectable.
+  const applyWindow = (window: TimeWindow) => {
+    startTransition(() => router.push(`/schedule?window=${window}`));
   };
 
   // ---- export ----
@@ -232,62 +210,14 @@ export default function ScheduleClient({
       <details className="no-print" style={panel} open>
         <summary style={summary}>⚙️ Taste settings {pending && <span style={{ color: "#4ad6ff" }}>· updating…</span>}</summary>
         <div style={{ marginTop: "0.75rem" }}>
-          <div style={{ fontSize: "0.82rem", color: "#8a8a94", marginBottom: 6 }}>Listening window (Spotify only offers these three):</div>
-          <div style={{ display: "flex", gap: 6, marginBottom: "0.9rem", flexWrap: "wrap" }}>
+          <div style={{ fontSize: "0.82rem", color: "#8a8a94", marginBottom: 6 }}>Listening window:</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {(Object.keys(WINDOW_LABEL) as TimeWindow[]).map((w) => (
-              <button key={w} onClick={() => applyOptions({ ...options, window: w })} style={chip(options.window === w)}>
+              <button key={w} onClick={() => applyWindow(w)} style={chip(options.window === w)}>
                 {WINDOW_LABEL[w]}
               </button>
             ))}
           </div>
-          <div style={{ fontSize: "0.82rem", color: "#8a8a94", marginBottom: 6 }}>Base my taste on:</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {SOURCES.map((s) => (
-              <button key={s.key} onClick={() => applyOptions({ ...options, [s.key]: !options[s.key] })} style={chip(options[s.key])}>
-                {options[s.key] ? "✓ " : ""}{s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </details>
-
-      {/* ---- Exclude artists ---- */}
-      <details className="no-print" style={panel}>
-        <summary style={summary}>🚫 Exclude artists {excludes.length > 0 && <span style={{ color: "#ff8a8a" }}>· {excludes.length} hidden</span>}</summary>
-        <div style={{ marginTop: "0.75rem" }}>
-          {excludes.length > 0 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: "0.75rem" }}>
-              {excludes.map((k) => {
-                const display = allArtists.find((a) => norm(a) === k) ?? k;
-                return (
-                  <button key={k} onClick={() => toggleExclude(k)} style={{ ...chip(true), background: "#3a2030", borderColor: "#5c2126" }}>
-                    {display} ✕
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <input
-            value={artistQuery}
-            onChange={(e) => setArtistQuery(e.target.value)}
-            placeholder="Search an artist to exclude…"
-            style={input}
-          />
-          {artistQuery.trim() && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
-              {allArtists
-                .filter((a) => a.toLowerCase().includes(artistQuery.toLowerCase()) && !excludeSet.has(norm(a)))
-                .slice(0, 12)
-                .map((a) => (
-                  <button key={a} onClick={() => { toggleExclude(a); setArtistQuery(""); }} style={chip(false)}>
-                    + {a}
-                  </button>
-                ))}
-            </div>
-          )}
-          <p style={{ fontSize: "0.78rem", color: "#6a6a74", marginTop: 8 }}>
-            Tip: <strong>Shift-click</strong> any set in the timeline to exclude that artist.
-          </p>
         </div>
       </details>
 
@@ -373,7 +303,7 @@ export default function ScheduleClient({
           <li><span style={{ color: TIER_COLOR.wildcard, fontWeight: 700 }}>🎲 Wildcard</span> — no real match for this slot, so we picked the most promising unfamiliar act to keep your day full and maybe surprise you.</li>
           <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700, border: `1.5px dashed ${TIER_COLOR["worth-it"]}`, borderRadius: 4, padding: "0 4px" }}>Dashed colored outline</span> = a favorite you&apos;re <strong>missing</strong> (a conflict beat it). See the ⭐ panel above to lock it back in.</li>
           <li><span style={{ color: "#7a7a84", fontWeight: 700 }}>Dark gray boxes</span> are other sets we didn&apos;t pick.</li>
-          <li><strong>Click</strong> a box to lock it (🔒) and re-optimize · <strong>Shift-click</strong> to exclude that artist · colored dots = a friend is going too.</li>
+          <li><strong>Click</strong> a box to lock it (🔒) and re-optimize · colored dots = a friend is going too.</li>
         </ul>
       </div>
 
@@ -417,23 +347,22 @@ export default function ScheduleClient({
                 .map((s) => {
                   const top = (mins(s.start) - DAY_START) * PX_PER_MIN;
                   const height = Math.max(18, (mins(s.end) - mins(s.start)) * PX_PER_MIN - 2);
-                  const isExcluded = excludeSet.has(norm(s.artist));
-                  const isChosen = !isExcluded && dayItin.chosenIds.has(s.id);
+                  const isChosen = dayItin.chosenIds.has(s.id);
                   // A real match (not a wildcard) that got bumped by a conflict.
-                  const isMissed = !isExcluded && !isChosen && s.tier !== "wildcard";
+                  const isMissed = !isChosen && s.tier !== "wildcard";
                   const isLocked = lockSet.has(s.id);
                   const fos = friendsOnSet(s.id);
                   const color = TIER_COLOR[s.tier];
                   return (
                     <button
                       key={s.id}
-                      onClick={(e) => (e.shiftKey ? toggleExclude(s.artist) : toggleLock(s.id))}
-                      title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${s.score}) — ${s.reason}\nClick to lock · Shift-click to exclude`}
+                      onClick={() => toggleLock(s.id)}
+                      title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${s.score}) — ${s.reason}\nClick to lock`}
                       style={{
                         position: "absolute", top, left: 2, right: 2, height, textAlign: "left", overflow: "hidden",
                         borderRadius: 5, padding: "2px 5px", cursor: "pointer",
-                        background: isExcluded ? "#241418" : isChosen ? color : "#1a1a22",
-                        color: isExcluded ? "#7a5a5a" : isChosen ? "#06210f" : isMissed ? color : "#7a7a84",
+                        background: isChosen ? color : "#1a1a22",
+                        color: isChosen ? "#06210f" : isMissed ? color : "#7a7a84",
                         border: isLocked
                           ? "2px solid #fff"
                           : isChosen
@@ -441,9 +370,8 @@ export default function ScheduleClient({
                             : isMissed
                               ? `1.5px dashed ${color}`
                               : "1px solid #26262f",
-                        opacity: isExcluded ? 0.6 : isChosen ? 1 : isMissed ? 0.95 : 0.55,
+                        opacity: isChosen ? 1 : isMissed ? 0.95 : 0.55,
                         fontSize: "0.72rem", fontWeight: isChosen ? 700 : 500, lineHeight: 1.15,
-                        textDecoration: isExcluded ? "line-through" : "none",
                       }}
                     >
                       {isLocked ? "🔒 " : ""}{s.artist}
