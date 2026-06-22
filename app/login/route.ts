@@ -10,13 +10,23 @@ import {
 
 // Kicks off the Authorization Code + PKCE flow.
 export async function GET(req: NextRequest) {
+  const redirect = redirectUri(req); // host-derived: works locally + on Vercel
+
+  // Fail readably instead of a raw 500 if config is missing (e.g. the
+  // SPOTIFY_CLIENT_ID env var isn't set on the deployment).
+  let id: string;
+  try {
+    id = clientId();
+  } catch {
+    return NextResponse.redirect(new URL("/?error=missing_client_id", redirect));
+  }
+
   const verifier = generateCodeVerifier();
   const challenge = codeChallenge(verifier);
-  const redirect = redirectUri(req); // host-derived: works locally + on Vercel
 
   const params = new URLSearchParams({
     response_type: "code",
-    client_id: clientId(),
+    client_id: id,
     scope: SCOPES,
     redirect_uri: redirect,
     code_challenge_method: "S256",
