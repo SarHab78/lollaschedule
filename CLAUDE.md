@@ -49,12 +49,27 @@ data/
   enriched-cache.json   (generated at runtime) cached Spotify genre lookups
 ```
 
-## Scoring model (lib/scoring.ts)
-`score = 70 * directAffinity + 30 * genreMatch` (0..100).
-- **directAffinity** — do you already play them (from top artists/tracks).
-- **genreMatch** — do their Spotify genres match your genre fingerprint.
-- Tiers: 🔥 must-see (direct ≥ .5), 👍 worth-it, 🔮 discovery (genre match, low direct), skip.
-- Weights/thresholds are constants at the top of the file — tune to taste.
+## Scoring model (lib/scoring.ts + lib/taste.ts)
+`score = max(70*directAffinity + 30*genreMatch, discoveryPotential) + 8*emphasis`.
+- **directAffinity** (0..1, window-INDEPENDENT) drives tier/color. Built in
+  taste.ts from the signals below; a favorite stays a favorite in every window.
+- **emphasis** (selected window only) is a small ranking nudge (≤8 pts), never
+  changes tier/color.
+- **genreMatch is effectively DEAD** — see gotcha below; it's ~always 0.
+- Tiers: 🔥 must-see (direct ≥ .5), 🔵 worth-it (≥ .15), 🟣 discovery, 🟠 wildcard.
+
+### Affinity from signals (taste.ts buildTasteProfile) — current weights
+| Signal | Affinity | Tier it lands |
+|---|---|---|
+| Top artist rank 1 → 50 | 1.0 → ~0.02 | must-see→down |
+| Top track (artist credited) | up to 0.6 | varies |
+| Recently played (last 50) | +0.12/hit, cap 0.4, additive | boosts |
+| **Liked song** (saved, up to 5000) | floor 0.2 (1 like) → 0.45 (many) | worth-it+ |
+| **Following** | floor 0.2 | worth-it |
+- KEY RULE the user set: **1 liked song == following == 0.2 (worth-it)**. A
+  follow is a LIGHT signal — must NOT be must-see (that bug shipped once: all
+  84 follows showed green; fixed by dropping the floor 0.5→0.2).
+- `taste.sourcesByName` (Map<name, Set<signal>>) records provenance for debug.
 
 ## Optimizer (lib/optimizer.ts)
 Classic weighted-interval-scheduling DP per day, sorted by end time, with a
@@ -74,30 +89,58 @@ before the next set starts (uses `data/stage-distances.json`).
 - Middleware was tried for the localhost redirect and removed — Next normalizes
   the Location header back to a relative path, so it can't move hosts. Use the
   client-side guard instead.
+- **Spotify genres + popularity are GONE for this app (confirmed 2026-06-22):**
+  `/search` returns empty genres + popularity 0, `/artists?ids=` returns **403**
+  in dev mode, AND `/me/top/artists` now also returns **0 genres** (probe logged
+  `0 distinct genres; 0 top artists have genres`). So genre-based discovery is
+  impossible — the ONLY working signals are direct listening (top/recent/saved/
+  followed). This is the whole reason the AI predictor (next step) exists.
+- **Debugging taste:** set `WATCH_ARTIST=<substr>` env (default "claire") — the
+  taste build logs whether that artist appears in ANY raw signal + exact
+  spelling, plus per-signal counts. `/schedule` then logs every detected lineup
+  artist with affinity + which signals caught them. Watch the dev-server stdout.
 
-## Status (as of 2026-06-22)
+## Status (as of 2026-06-22, end of session)
 DONE: scaffold, Spotify PKCE login, dashboard, real 2026 lineup, scoring +
-optimizer, `/schedule` verified rendering. PLUS this session:
-- Recency tuning: recently-played + saved library now feed taste affinity.
-- Optimizer overrides: optimizeDay accepts lockedIds (force-included).
-- Timeline UI (ScheduleClient): stages as columns, click-to-lock, in-browser re-optimize.
-- Export: .ics download, /share?sets= link (public), print view (@media print + .no-print/.print-only).
-All typechecks clean; /share + /schedule compile and render. The new timeline +
-export need a final **visual/interaction check in the browser** (lock a set,
-download .ics, copy share link, print preview).
+optimizer, timeline UI, export (.ics/share/print). THIS SESSION's work:
+- Added signals: **followed artists** (`user-follow-read` scope) + **deep liked
+  songs** (now up to 5000, parallel paginated fetch via library total).
+- Affinity is now **window-independent** (favorites stay favorites in every
+  window); selected window only nudges ranking via `emphasis`.
+- Reweighted signals (see Scoring model table). Fixed the "all follows show as
+  green must-see" bug (0.5→0.2). User rule: **1 liked song == following == 0.2**.
+- Added provenance logging + `WATCH_ARTIST` probe (see Gotchas).
+- **Confirmed genres are 100% dead** even on top artists → discovery now REQUIRES
+  the AI predictor. enrich.ts no longer hits the 403 `/artists` endpoint.
+- All typechecks clean, committed + pushed to origin/main.
+
+### Worked example resolved this session
+User listens to **Claire Rosinkranz** but she scored as a wildcard. Root cause
+traced via the WATCH probe: she was a liked song sitting **past #500** in the
+library (cap was too shallow) AND saved songs were under-weighted. Fix: raised
+saved cap (→5000) + floored saved/follow at worth-it. She now scores worth-it.
 
 ## Next steps (roughly in order)
-1. Browser check of the timeline + export (lock/unlock, .ics, share link, print).
-2. Tune scoring weights + the stage-distance matrix against reality.
-3. **Share link is ugly** (user flagged): currently `/share?sets=set-26,set-46,...`
-   — a long comma-separated list of every set id. Replace with something compact/
-   pretty: short code + server (or KV/edge) lookup, or a compressed/base62-encoded
-   payload. Keep `/share` renderable without auth.
-4. Polish: persist locks across reloads (localStorage/URL), mobile timeline layout,
-   show conflicts/runner-ups inline in the timeline, loading state on first /schedule
-   load (the ~134 enrichment searches are slow before the cache is warm).
-5. (later) Apple Music via MusicKit; quota-extension request to take the app public.
+1. **AI PREDICTOR (the headline next task)** — build `lib/predict.ts` using
+   `@anthropic-ai/sdk`, model **`claude-opus-4-8`**, structured JSON output
+   (`client.messages.parse()`), `thinking: {type:"adaptive"}`, NO temperature/
+   top_p/budget_tokens (they 400 on 4.8). Feed it the user's demonstrated
+   favorites (detected lineup artists + 84 follows) + the ~134 lineup names;
+   get back `{artist, score 0-100, reason}` per artist. This score becomes the
+   **discovery signal** that replaces dead genreMatch in scoring.ts. Cache per
+   taste-signature. Needs: `npm install @anthropic-ai/sdk` + `ANTHROPIC_API_KEY`
+   in `.env.local` (gitignored). User is on board; just needs to supply the key.
+   The claude-api skill has the exact SDK usage — invoke it when building.
+2. Tune scoring weights + stage-distance matrix against reality.
+3. **Share link is ugly** (user flagged): currently `/share?sets=set-26,...` long
+   csv. Replace with compact short-code+lookup or base62-compressed payload.
+   Keep `/share` renderable without auth.
+4. Polish: persist locks across reloads, mobile timeline, inline conflicts/
+   runner-ups, loading state on first /schedule load (enrichment is slow cold).
+5. (later) Apple Music via MusicKit; quota-extension to take the app public.
 
-## Open question for the user
-Should 🔮 Discovery picks lean **aggressive** (surface lots of unfamiliar artists)
-or **conservative** (mostly reinforce who they already play)? Currently balanced.
+## Notes for next session
+- Dev server runs in background bound to 127.0.0.1:3000; `console.log` goes to
+  its stdout (currently launched from within a Claude session — restart in a
+  user-owned terminal with `npm run dev` if you need to watch logs live).
+- User must stay reconnected for `user-follow-read` (followed=84 confirmed live).
