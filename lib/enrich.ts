@@ -11,6 +11,7 @@ export type ArtistMeta = {
   genres: string[];
   popularity: number; // 0..100
   image: string | null;
+  genresFetched: boolean; // have we hit /artists for genres+popularity yet?
 };
 
 const CACHE_PATH = join(process.cwd(), "data", "enriched-cache.json");
@@ -32,8 +33,10 @@ function saveCache(cache: Record<string, ArtistMeta>) {
   }
 }
 
-// Resolve metadata for many artist names, hitting Spotify search only for cache
-// misses, with bounded concurrency to stay friendly with rate limits.
+// Resolve metadata for many artist names:
+//  1. search (cache miss only) to get the Spotify id + image,
+//  2. batch /artists?ids= to get genres + popularity — the SEARCH endpoint no
+//     longer returns those reliably, so we must hit the full artist endpoint.
 export async function enrichArtists(
   names: string[],
   token: string,
@@ -48,9 +51,10 @@ export async function enrichArtists(
     else misses.push(name);
   }
 
+  // 1. Search for cache misses → id + image (bounded concurrency).
   const CONCURRENCY = 6;
   let i = 0;
-  async function worker() {
+  async function searchWorker() {
     while (i < misses.length) {
       const name = misses[i++];
       try {
@@ -58,20 +62,25 @@ export async function enrichArtists(
         const meta: ArtistMeta = {
           name,
           spotifyId: a?.id ?? null,
-          genres: a?.genres ?? [],
-          popularity: a?.popularity ?? 0,
+          genres: [],
+          popularity: 0,
           image: a?.images?.[0]?.url ?? null,
+          genresFetched: false,
         };
         cache[name] = meta;
         result.set(name, meta);
       } catch {
-        const meta: ArtistMeta = { name, spotifyId: null, genres: [], popularity: 0, image: null };
-        result.set(name, meta); // don't cache failures
+        result.set(name, { name, spotifyId: null, genres: [], popularity: 0, image: null, genresFetched: false });
       }
     }
   }
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  await Promise.all(Array.from({ length: CONCURRENCY }, searchWorker));
 
-  if (misses.length) saveCache(cache);
+  // NOTE: the /artists endpoint (genres + popularity) returns 403 Forbidden for
+  // this app — Spotify restricts it for development-mode apps. Genres are also
+  // empty from /search. So we currently can't get genre/popularity from Spotify;
+  // matching relies on direct listening signals (top/recent/saved/followed).
+
+  saveCache(cache);
   return result;
 }

@@ -1,7 +1,7 @@
 import { ArtistMeta } from "./enrich";
 import { normalizeName, TasteProfile } from "./taste";
 
-export type Tier = "must-see" | "worth-it" | "discovery" | "skip";
+export type Tier = "must-see" | "worth-it" | "discovery" | "wildcard";
 
 export type ScoredArtist = {
   artist: string;
@@ -37,9 +37,22 @@ export function scoreArtist(
   meta: ArtistMeta | undefined,
   taste: TasteProfile,
 ): ScoredArtist {
-  const direct = taste.affinityByName.get(normalizeName(artistName)) ?? 0;
+  const key = normalizeName(artistName);
+  const direct = taste.affinityByName.get(key) ?? 0; // window-independent → tier
+  const emphasis = taste.emphasisByName.get(key) ?? 0; // selected window → nudge only
   const genre = genreMatch(meta, taste);
-  const score = Math.round(W_DIRECT * direct + W_GENRE * genre);
+  const pop = (meta?.popularity ?? 0) / 100;
+  const base = W_DIRECT * direct + W_GENRE * genre; // 0..100, real enjoyment
+
+  // We schedule the whole day, so even with no match we still pick *something*
+  // for each slot. Rank those fillers by genre fit + popularity so they're the
+  // most promising unfamiliar acts (a worthwhile discovery), not random ones —
+  // and so the score is never a flat, meaningless 0.
+  const discoveryPotential = 12 * genre + 6 * pop; // 0..18
+
+  // Tier (below) uses only `direct`/`genre` so colors are window-independent;
+  // emphasis just adds up to 8 points to break conflict ties toward the window.
+  const score = Math.max(1, Math.round(Math.max(base, discoveryPotential) + 8 * emphasis));
 
   let tier: Tier;
   let reason: string;
@@ -55,12 +68,15 @@ export function scoreArtist(
   } else if (genre >= 0.45) {
     tier = "discovery";
     reason = "New to you, but right up your alley";
-  } else if (score > 0) {
-    tier = "discovery";
-    reason = "Loose match to your taste";
   } else {
-    tier = "skip";
-    reason = "Not your usual sound";
+    // Filler we picked to keep your day full — the best unfamiliar option here.
+    tier = "wildcard";
+    reason =
+      genre >= 0.2
+        ? "Wildcard — leans toward your taste, worth a look"
+        : pop >= 0.6
+          ? "Wildcard — a popular act to fill the slot"
+          : "Wildcard — picked to keep your day full";
   }
 
   return { artist: artistName, score, tier, directAffinity: direct, genreMatch: genre, reason };

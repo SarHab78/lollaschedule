@@ -1,6 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { buildTasteProfile } from "@/lib/taste";
+import {
+  buildTasteProfile,
+  DEFAULT_TASTE_OPTIONS,
+  TasteOptions,
+  TimeWindow,
+} from "@/lib/taste";
 import { enrichArtists } from "@/lib/enrich";
 import { getLineup, uniqueArtists } from "@/lib/lineup";
 import { scoreArtist } from "@/lib/scoring";
@@ -9,11 +14,32 @@ import ScheduleClient, { UISet, DayData } from "./ScheduleClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function Schedule() {
+type Props = { searchParams: Promise<{ window?: string; sources?: string }> };
+
+const WINDOWS: TimeWindow[] = ["short_term", "medium_term", "long_term"];
+
+function parseOptions(sp: { window?: string; sources?: string }): TasteOptions {
+  const window = WINDOWS.includes(sp.window as TimeWindow)
+    ? (sp.window as TimeWindow)
+    : DEFAULT_TASTE_OPTIONS.window;
+  // sources is a csv of enabled keys; absent param => defaults.
+  if (sp.sources === undefined) return { ...DEFAULT_TASTE_OPTIONS, window };
+  const on = new Set(sp.sources.split(",").filter(Boolean));
+  return {
+    window,
+    useTopArtists: on.has("artists"),
+    useTopTracks: on.has("tracks"),
+    useRecent: on.has("recent"),
+    useSaved: on.has("saved"),
+  };
+}
+
+export default async function Schedule({ searchParams }: Props) {
   const token = (await cookies()).get("spotify_access_token")?.value;
   if (!token) redirect("/?error=not_logged_in");
 
-  const taste = await buildTasteProfile(token);
+  const options = parseOptions(await searchParams);
+  const taste = await buildTasteProfile(token, options);
   const meta = await enrichArtists(uniqueArtists(), token);
   const lineup = getLineup();
 
@@ -50,5 +76,5 @@ export default async function Schedule() {
   const pos = stageDistances.walkMinutesFromNorth as Record<string, number>;
   const stageOrder = [...lineup.stages].sort((a, b) => (pos[a] ?? 0) - (pos[b] ?? 0));
 
-  return <ScheduleClient days={days} stageOrder={stageOrder} />;
+  return <ScheduleClient days={days} stageOrder={stageOrder} options={options} />;
 }

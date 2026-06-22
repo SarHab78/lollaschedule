@@ -9,6 +9,7 @@ export const SCOPES = [
   "user-top-read",
   "user-read-recently-played",
   "user-library-read",
+  "user-follow-read", // artists you follow (not capped at top-50)
 ].join(" ");
 
 export function clientId(): string {
@@ -126,13 +127,39 @@ export async function getRecentlyPlayed(accessToken: string): Promise<TopTrack[]
   return data.items.map((i) => i.track).filter(Boolean);
 }
 
-// Saved/liked tracks — a broad signal of artists you care about.
-export async function getSavedTracks(accessToken: string): Promise<TopTrack[]> {
-  const data = await spotifyGet<{ items: { track: TopTrack }[] }>(
-    `/me/tracks?limit=50`,
-    accessToken,
-  );
-  return data.items.map((i) => i.track).filter(Boolean);
+// Saved/liked tracks — a broad signal of artists you care about. Paginated up
+// to `max` so artists beyond your first 50 likes still get detected.
+export async function getSavedTracks(
+  accessToken: string,
+  max = 500,
+): Promise<TopTrack[]> {
+  const out: TopTrack[] = [];
+  for (let offset = 0; offset < max; offset += 50) {
+    const data = await spotifyGet<{ items: { track: TopTrack }[]; next: string | null }>(
+      `/me/tracks?limit=50&offset=${offset}`,
+      accessToken,
+    );
+    out.push(...data.items.map((i) => i.track).filter(Boolean));
+    if (!data.next) break;
+  }
+  return out;
+}
+
+// Artists you explicitly follow — a strong "I like this" signal that is NOT
+// limited to your top 50. Paginated via the cursor. Needs `user-follow-read`.
+export async function getFollowedArtists(accessToken: string): Promise<TopArtist[]> {
+  const out: TopArtist[] = [];
+  let after: string | undefined;
+  for (let i = 0; i < 10; i++) {
+    const url = `/me/following?type=artist&limit=50${after ? `&after=${after}` : ""}`;
+    const data = await spotifyGet<{
+      artists: { items: TopArtist[]; next: string | null; cursors: { after: string | null } };
+    }>(url, accessToken);
+    out.push(...data.artists.items);
+    after = data.artists.cursors?.after ?? undefined;
+    if (!after || !data.artists.next) break;
+  }
+  return out;
 }
 
 // Search for an artist by name — used to enrich lineup acts with genres/images.
