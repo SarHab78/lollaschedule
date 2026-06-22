@@ -1,0 +1,1569 @@
+{
+  "festival": "Lollapalooza 2026",
+  "location": "Grant Park, Chicago, IL",
+  "dates": [
+    "2026-07-30",
+    "2026-07-31",
+    "2026-08-01",
+    "2026-08-02"
+  ],
+  "stages": [
+    "Airbnb",
+    "Allianz",
+    "BMI",
+    "Bud Light",
+    "Perry's",
+    "T-Mobile",
+    "Tito's"
+  ],
+  "sets": [
+    {
+      "id": "set-0",
+      "artist": "5 SECONDS OF SUMMER",
+      "stage": "T-Mobile",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T16:30",
+      "end": "2026-07-30T17:30"
+    },
+    {
+      "id": "set-1",
+      "artist": "ASHA BANKS",
+      "stage": "T-Mobile",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T12:45",
+      "end": "2026-07-30T13:30"
+    },
+    {
+      "id": "set-2",
+      "artist": "AUDREY HOBERT",
+      "stage": "Allianz",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T17:30",
+      "end": "2026-07-30T18:30"
+    },
+    {
+      "id": "set-3",
+      "artist": "BAD NERVES",
+      "stage": "Allianz",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T13:30",
+      "end": "2026-07-30T14:30"
+    },
+    {
+      "id": "set-4",
+      "artist": "BELLA KAY",
+      "stage": "BMI",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T16:30",
+      "end": "2026-07-30T17:10"
+    },
+    {
+      "id": "set-5",
+      "artist": "BETWEEN FRIENDS",
+      "stage": "Bud Light",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T14:45",
+      "end": "2026-07-30T15:45"
+    },
+    {
+      "id": "set-6",
+      "artist": "BIXBY",
+      "stage": "Bud Light",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T13:00",
+      "end": "2026-07-30T13:45"
+    },
+    {
+      "id": "set-7",
+      "artist": "BLOOD ORANGE",
+      "stage": "Bud Light",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T16:45",
+      "end": "2026-07-30T17:45"
+    },
+    {
+      "id": "set-8",
+      "artist": "BORIS BREJCHA",
+      "stage": "Perry's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T17:45",
+      "end": "2026-07-30T18:45"
+    },
+    {
+      "id": "set-9",
+      "artist": "BOYS NOIZE",
+      "stage": "Perry's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T16:15",
+      "end": "2026-07-30T17:15"
+    },
+    {
+      "id": "set-10",
+      "artist": "CHALK",
+      "stage": "BMI",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T17:40",
+      "end": "2026-07-30T18:20"
+    },
+    {
+      "id": "set-11",
+      "artist": "CMAT",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T18:30",
+      "end": "2026-07-30T19:15"
+    },
+    {
+      "id": "set-12",
+      "artist": "DEVAULT",
+      "stage": "Tito's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T19:45",
+      "end": "2026-07-30T20:30"
+    },
+    {
+      "id": "set-13",
+      "artist": "ECCA VANDAL",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T14:50",
+      "end": "2026-07-30T15:30"
+    },
+    {
+      "id": "set-14",
+      "artist": "ELIZABETH NICHOLS",
+      "stage": "BMI",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T15:20",
+      "end": "2026-07-30T16:00"
+    },
+    {
+      "id": "set-15",
+      "artist": "EMPIRE OF THE SUN",
+      "stage": "Bud Light",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T18:45",
+      "end": "2026-07-30T19:45"
+    },
+    {
+      "id": "set-16",
+      "artist": "EVENING ELEPHANTS",
+      "stage": "BMI",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T18:50",
+      "end": "2026-07-30T19:30"
+    },
+    {
+      "id": "set-17",
+      "artist": "FAOUZIA",
+      "stage": "Tito's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T12:15",
+      "end": "2026-07-30T13:00"
+    },
+    {
+      "id": "set-18",
+      "artist": "HAUTE & FREDDY",
+      "stage": "T-Mobile",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T14:30",
+      "end": "2026-07-30T15:30"
+    },
+    {
+      "id": "set-19",
+      "artist": "JOHN SUMMIT",
+      "stage": "Bud Light",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T20:30",
+      "end": "2026-07-30T22:00"
+    },
+    {
+      "id": "set-20",
+      "artist": "KETTAMA",
+      "stage": "Perry's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T19:00",
+      "end": "2026-07-30T20:00"
+    },
+    {
+      "id": "set-21",
+      "artist": "KIM THEORY",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T12:00",
+      "end": "2026-07-30T12:30"
+    },
+    {
+      "id": "set-22",
+      "artist": "KINGFISHR",
+      "stage": "Tito's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T13:45",
+      "end": "2026-07-30T14:45"
+    },
+    {
+      "id": "set-23",
+      "artist": "KLO",
+      "stage": "Perry's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T12:00",
+      "end": "2026-07-30T12:30"
+    },
+    {
+      "id": "set-24",
+      "artist": "KNOW GOOD",
+      "stage": "Perry's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T12:45",
+      "end": "2026-07-30T13:30"
+    },
+    {
+      "id": "set-25",
+      "artist": "LITTLE SIMZ",
+      "stage": "Tito's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T17:45",
+      "end": "2026-07-30T18:45"
+    },
+    {
+      "id": "set-26",
+      "artist": "LORDE",
+      "stage": "T-Mobile",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T20:30",
+      "end": "2026-07-30T22:00"
+    },
+    {
+      "id": "set-27",
+      "artist": "MARLON FUNAKI",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T13:50",
+      "end": "2026-07-30T14:30"
+    },
+    {
+      "id": "set-28",
+      "artist": "MPH",
+      "stage": "Perry's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T15:00",
+      "end": "2026-07-30T16:00"
+    },
+    {
+      "id": "set-29",
+      "artist": "NINAJIRACHI",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T16:00",
+      "end": "2026-07-30T16:45"
+    },
+    {
+      "id": "set-30",
+      "artist": "PARIS PALOMA",
+      "stage": "Tito's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T15:45",
+      "end": "2026-07-30T16:45"
+    },
+    {
+      "id": "set-31",
+      "artist": "PEARLY DROPS",
+      "stage": "Allianz",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T12:00",
+      "end": "2026-07-30T12:45"
+    },
+    {
+      "id": "set-32",
+      "artist": "PENELOPE ROAD",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T12:50",
+      "end": "2026-07-30T13:30"
+    },
+    {
+      "id": "set-33",
+      "artist": "SB19",
+      "stage": "Allianz",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T15:30",
+      "end": "2026-07-30T16:30"
+    },
+    {
+      "id": "set-34",
+      "artist": "SIMON GROSSMANN",
+      "stage": "BMI",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T14:10",
+      "end": "2026-07-30T14:50"
+    },
+    {
+      "id": "set-35",
+      "artist": "SNOW STRIPPERS",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T19:45",
+      "end": "2026-07-30T20:30"
+    },
+    {
+      "id": "set-36",
+      "artist": "SOMBR",
+      "stage": "T-Mobile",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T18:30",
+      "end": "2026-07-30T19:30"
+    },
+    {
+      "id": "set-37",
+      "artist": "THE BRAYMORES",
+      "stage": "BMI",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T13:00",
+      "end": "2026-07-30T13:40"
+    },
+    {
+      "id": "set-38",
+      "artist": "VIAGRA BOYS",
+      "stage": "Airbnb",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T21:00",
+      "end": "2026-07-30T22:00"
+    },
+    {
+      "id": "set-39",
+      "artist": "WET LEG",
+      "stage": "Allianz",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T19:30",
+      "end": "2026-07-30T20:30"
+    },
+    {
+      "id": "set-40",
+      "artist": "WORSHIP",
+      "stage": "Perry's",
+      "date": "2026-07-30",
+      "day": "Thursday",
+      "start": "2026-07-30T20:30",
+      "end": "2026-07-30T21:45"
+    },
+    {
+      "id": "set-41",
+      "artist": "54 ULTRA",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T14:50",
+      "end": "2026-07-31T15:30"
+    },
+    {
+      "id": "set-42",
+      "artist": "AVELLO",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:45",
+      "end": "2026-07-31T13:30"
+    },
+    {
+      "id": "set-43",
+      "artist": "BALU BRIGADA",
+      "stage": "Bud Light",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T14:30",
+      "end": "2026-07-31T15:30"
+    },
+    {
+      "id": "set-44",
+      "artist": "BENO",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:00",
+      "end": "2026-07-31T12:30"
+    },
+    {
+      "id": "set-45",
+      "artist": "BRADEAZY",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:00",
+      "end": "2026-07-31T12:30"
+    },
+    {
+      "id": "set-46",
+      "artist": "CHARLI XCX",
+      "stage": "T-Mobile",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T20:40",
+      "end": "2026-07-31T22:00"
+    },
+    {
+      "id": "set-47",
+      "artist": "CHICAGO MADE",
+      "stage": "Tito's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:15",
+      "end": "2026-07-31T13:00"
+    },
+    {
+      "id": "set-48",
+      "artist": "CLAIRE ROSINKRANZ",
+      "stage": "Allianz",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T13:40",
+      "end": "2026-07-31T14:40"
+    },
+    {
+      "id": "set-49",
+      "artist": "DAY WE RAN",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:50",
+      "end": "2026-07-31T13:30"
+    },
+    {
+      "id": "set-50",
+      "artist": "ELLA BOH",
+      "stage": "BMI",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T14:10",
+      "end": "2026-07-31T14:50"
+    },
+    {
+      "id": "set-51",
+      "artist": "ELLA RED",
+      "stage": "BMI",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T17:40",
+      "end": "2026-07-31T18:20"
+    },
+    {
+      "id": "set-52",
+      "artist": "EMI GRACE",
+      "stage": "BMI",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T15:20",
+      "end": "2026-07-31T16:00"
+    },
+    {
+      "id": "set-53",
+      "artist": "FINN WOLFHARD",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T16:00",
+      "end": "2026-07-31T16:45"
+    },
+    {
+      "id": "set-54",
+      "artist": "FREDDIE GIBBS",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T21:15",
+      "end": "2026-07-31T22:00"
+    },
+    {
+      "id": "set-55",
+      "artist": "HIGH VIS",
+      "stage": "Bud Light",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T13:00",
+      "end": "2026-07-31T13:45"
+    },
+    {
+      "id": "set-56",
+      "artist": "HORSEGIIRL",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T20:00",
+      "end": "2026-07-31T20:45"
+    },
+    {
+      "id": "set-57",
+      "artist": "I-DLE",
+      "stage": "T-Mobile",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T14:40",
+      "end": "2026-07-31T15:40"
+    },
+    {
+      "id": "set-58",
+      "artist": "IVRI",
+      "stage": "BMI",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T16:30",
+      "end": "2026-07-31T17:10"
+    },
+    {
+      "id": "set-59",
+      "artist": "JULIA WOLF",
+      "stage": "Tito's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T13:45",
+      "end": "2026-07-31T14:30"
+    },
+    {
+      "id": "set-60",
+      "artist": "LIL UZI VERT",
+      "stage": "T-Mobile",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T18:40",
+      "end": "2026-07-31T19:40"
+    },
+    {
+      "id": "set-61",
+      "artist": "LOATHE",
+      "stage": "Tito's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T17:30",
+      "end": "2026-07-31T18:30"
+    },
+    {
+      "id": "set-62",
+      "artist": "LOVE SPELLS",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T13:50",
+      "end": "2026-07-31T14:30"
+    },
+    {
+      "id": "set-63",
+      "artist": "LYNY",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T13:45",
+      "end": "2026-07-31T14:45"
+    },
+    {
+      "id": "set-64",
+      "artist": "MAJOR LAZER",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T20:30",
+      "end": "2026-07-31T21:45"
+    },
+    {
+      "id": "set-65",
+      "artist": "MOTHER MOTHER",
+      "stage": "Tito's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T15:30",
+      "end": "2026-07-31T16:30"
+    },
+    {
+      "id": "set-66",
+      "artist": "MUSTARD",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T19:00",
+      "end": "2026-07-31T20:00"
+    },
+    {
+      "id": "set-67",
+      "artist": "NETTSPEND",
+      "stage": "Tito's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T19:30",
+      "end": "2026-07-31T20:30"
+    },
+    {
+      "id": "set-68",
+      "artist": "NOT FOR RADIO",
+      "stage": "Allianz",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T19:40",
+      "end": "2026-07-31T20:40"
+    },
+    {
+      "id": "set-69",
+      "artist": "NOTION",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T16:15",
+      "end": "2026-07-31T17:15"
+    },
+    {
+      "id": "set-70",
+      "artist": "OKLOU",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T17:30",
+      "end": "2026-07-31T18:15"
+    },
+    {
+      "id": "set-71",
+      "artist": "PALOMA MORPHY",
+      "stage": "BMI",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T18:50",
+      "end": "2026-07-31T19:30"
+    },
+    {
+      "id": "set-72",
+      "artist": "PARTYOF2",
+      "stage": "T-Mobile",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:55",
+      "end": "2026-07-31T13:40"
+    },
+    {
+      "id": "set-73",
+      "artist": "ROZ",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T15:00",
+      "end": "2026-07-31T16:00"
+    },
+    {
+      "id": "set-74",
+      "artist": "SIDEPIECE",
+      "stage": "Perry's",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T17:45",
+      "end": "2026-07-31T18:45"
+    },
+    {
+      "id": "set-75",
+      "artist": "SKYE NEWMAN",
+      "stage": "Allianz",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T15:40",
+      "end": "2026-07-31T16:40"
+    },
+    {
+      "id": "set-76",
+      "artist": "SLAYYYTER",
+      "stage": "Airbnb",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T18:45",
+      "end": "2026-07-31T19:30"
+    },
+    {
+      "id": "set-77",
+      "artist": "THE ARMY, THE NAVY",
+      "stage": "Allianz",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:10",
+      "end": "2026-07-31T12:55"
+    },
+    {
+      "id": "set-78",
+      "artist": "THE SMASHING PUMPKINS",
+      "stage": "Bud Light",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T20:30",
+      "end": "2026-07-31T22:00"
+    },
+    {
+      "id": "set-79",
+      "artist": "THE STORY SO FAR",
+      "stage": "Bud Light",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T16:30",
+      "end": "2026-07-31T17:30"
+    },
+    {
+      "id": "set-80",
+      "artist": "VALENCIA GRACE",
+      "stage": "BMI",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T13:00",
+      "end": "2026-07-31T13:40"
+    },
+    {
+      "id": "set-81",
+      "artist": "WHITNEY WHITNEY",
+      "stage": "BMI",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T12:00",
+      "end": "2026-07-31T12:30"
+    },
+    {
+      "id": "set-82",
+      "artist": "YUNGBLUD",
+      "stage": "Bud Light",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T18:30",
+      "end": "2026-07-31T19:30"
+    },
+    {
+      "id": "set-83",
+      "artist": "ZARA LARSSON",
+      "stage": "T-Mobile",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T16:40",
+      "end": "2026-07-31T17:40"
+    },
+    {
+      "id": "set-84",
+      "artist": "SUKI WATERHOUSE",
+      "stage": "Allianz",
+      "date": "2026-07-31",
+      "day": "Friday",
+      "start": "2026-07-31T17:40",
+      "end": "2026-07-31T18:40"
+    },
+    {
+      "id": "set-85",
+      "artist": "ALISON WONDERLAND",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T19:00",
+      "end": "2026-08-01T20:00"
+    },
+    {
+      "id": "set-86",
+      "artist": "AYYBO",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T15:00",
+      "end": "2026-08-01T16:00"
+    },
+    {
+      "id": "set-87",
+      "artist": "BBNO$",
+      "stage": "Tito's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T18:15",
+      "end": "2026-08-01T19:15"
+    },
+    {
+      "id": "set-88",
+      "artist": "CALDER ALLEN",
+      "stage": "BMI",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T16:30",
+      "end": "2026-08-01T17:10"
+    },
+    {
+      "id": "set-89",
+      "artist": "CAMERON WHITCOMB",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T19:45",
+      "end": "2026-08-01T20:30"
+    },
+    {
+      "id": "set-90",
+      "artist": "CHACE",
+      "stage": "Bud Light",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T13:30",
+      "end": "2026-08-01T14:15"
+    },
+    {
+      "id": "set-91",
+      "artist": "CHEZILE",
+      "stage": "Tito's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T12:45",
+      "end": "2026-08-01T13:30"
+    },
+    {
+      "id": "set-92",
+      "artist": "CHICAGO YOUTH SYMPHONY ORCHESTRA",
+      "stage": "Tito's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T20:15",
+      "end": "2026-08-01T21:00"
+    },
+    {
+      "id": "set-93",
+      "artist": "CLIPSE",
+      "stage": "Bud Light",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T17:15",
+      "end": "2026-08-01T18:15"
+    },
+    {
+      "id": "set-94",
+      "artist": "CORTIS",
+      "stage": "T-Mobile",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T14:55",
+      "end": "2026-08-01T15:45"
+    },
+    {
+      "id": "set-95",
+      "artist": "DIE SPITZ",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T13:50",
+      "end": "2026-08-01T14:30"
+    },
+    {
+      "id": "set-96",
+      "artist": "DISCO LINES",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T20:30",
+      "end": "2026-08-01T21:45"
+    },
+    {
+      "id": "set-97",
+      "artist": "DJ TRIXIE MATTEL",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T21:00",
+      "end": "2026-08-01T22:00"
+    },
+    {
+      "id": "set-98",
+      "artist": "ETHEL CAIN",
+      "stage": "Bud Light",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T19:15",
+      "end": "2026-08-01T20:15"
+    },
+    {
+      "id": "set-99",
+      "artist": "FROST CHILDREN",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T14:50",
+      "end": "2026-08-01T15:30"
+    },
+    {
+      "id": "set-100",
+      "artist": "GEESE",
+      "stage": "Allianz",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T19:30",
+      "end": "2026-08-01T20:30"
+    },
+    {
+      "id": "set-101",
+      "artist": "GOLDIE BOUTILIER",
+      "stage": "Tito's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T14:15",
+      "end": "2026-08-01T15:15"
+    },
+    {
+      "id": "set-102",
+      "artist": "INK",
+      "stage": "BMI",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T15:20",
+      "end": "2026-08-01T16:00"
+    },
+    {
+      "id": "set-103",
+      "artist": "JAE STEPHENS",
+      "stage": "BMI",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T17:40",
+      "end": "2026-08-01T18:20"
+    },
+    {
+      "id": "set-104",
+      "artist": "JENNIE",
+      "stage": "Bud Light",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T21:00",
+      "end": "2026-08-01T22:00"
+    },
+    {
+      "id": "set-105",
+      "artist": "JIM LEGXACY",
+      "stage": "Allianz",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T13:55",
+      "end": "2026-08-01T14:55"
+    },
+    {
+      "id": "set-106",
+      "artist": "KHAMARI",
+      "stage": "Allianz",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T15:45",
+      "end": "2026-08-01T16:30"
+    },
+    {
+      "id": "set-107",
+      "artist": "KWN",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T18:30",
+      "end": "2026-08-01T19:15"
+    },
+    {
+      "id": "set-108",
+      "artist": "LEON THOMAS",
+      "stage": "T-Mobile",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T16:30",
+      "end": "2026-08-01T17:30"
+    },
+    {
+      "id": "set-109",
+      "artist": "LUCY BEDROQUE",
+      "stage": "T-Mobile",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T13:10",
+      "end": "2026-08-01T13:55"
+    },
+    {
+      "id": "set-110",
+      "artist": "MAX STYLER",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T17:45",
+      "end": "2026-08-01T18:45"
+    },
+    {
+      "id": "set-111",
+      "artist": "MC4D",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T12:45",
+      "end": "2026-08-01T13:30"
+    },
+    {
+      "id": "set-112",
+      "artist": "MOMMA",
+      "stage": "Tito's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T16:15",
+      "end": "2026-08-01T17:15"
+    },
+    {
+      "id": "set-113",
+      "artist": "NAT MYERS",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T12:00",
+      "end": "2026-08-01T12:30"
+    },
+    {
+      "id": "set-114",
+      "artist": "NEXT OF KIN",
+      "stage": "BMI",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T14:10",
+      "end": "2026-08-01T14:50"
+    },
+    {
+      "id": "set-115",
+      "artist": "OLIVIA DEAN",
+      "stage": "T-Mobile",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T20:30",
+      "end": "2026-08-01T22:00"
+    },
+    {
+      "id": "set-116",
+      "artist": "OMNOM",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T13:45",
+      "end": "2026-08-01T14:45"
+    },
+    {
+      "id": "set-117",
+      "artist": "PEACE CONTROL",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T12:00",
+      "end": "2026-08-01T12:30"
+    },
+    {
+      "id": "set-118",
+      "artist": "QUADECA",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T16:00",
+      "end": "2026-08-01T16:45"
+    },
+    {
+      "id": "set-119",
+      "artist": "RYMAN",
+      "stage": "BMI",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T18:50",
+      "end": "2026-08-01T19:30"
+    },
+    {
+      "id": "set-120",
+      "artist": "SIENNA SPIRO",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T17:15",
+      "end": "2026-08-01T18:00"
+    },
+    {
+      "id": "set-121",
+      "artist": "SPACEY JANE",
+      "stage": "Allianz",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T17:30",
+      "end": "2026-08-01T18:30"
+    },
+    {
+      "id": "set-122",
+      "artist": "SUNDAY (1994)",
+      "stage": "Allianz",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T12:25",
+      "end": "2026-08-01T13:10"
+    },
+    {
+      "id": "set-123",
+      "artist": "THE CREEKERS",
+      "stage": "BMI",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T13:00",
+      "end": "2026-08-01T13:40"
+    },
+    {
+      "id": "set-124",
+      "artist": "THE NEIGHBOURHOOD",
+      "stage": "T-Mobile",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T18:30",
+      "end": "2026-08-01T19:30"
+    },
+    {
+      "id": "set-125",
+      "artist": "VILLANELLE",
+      "stage": "Airbnb",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T12:50",
+      "end": "2026-08-01T13:30"
+    },
+    {
+      "id": "set-126",
+      "artist": "WHETHAN",
+      "stage": "Perry's",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T16:15",
+      "end": "2026-08-01T17:15"
+    },
+    {
+      "id": "set-127",
+      "artist": "WOLF ALICE",
+      "stage": "Bud Light",
+      "date": "2026-08-01",
+      "day": "Saturday",
+      "start": "2026-08-01T15:15",
+      "end": "2026-08-01T16:15"
+    },
+    {
+      "id": "set-128",
+      "artist": "ADELA",
+      "stage": "T-Mobile",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T15:00",
+      "end": "2026-08-02T15:45"
+    },
+    {
+      "id": "set-129",
+      "artist": "ADO",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T21:15",
+      "end": "2026-08-02T22:00"
+    },
+    {
+      "id": "set-130",
+      "artist": "AESPA",
+      "stage": "Allianz",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T19:45",
+      "end": "2026-08-02T20:45"
+    },
+    {
+      "id": "set-131",
+      "artist": "AFTER",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T13:50",
+      "end": "2026-08-02T14:30"
+    },
+    {
+      "id": "set-132",
+      "artist": "AMBER MARK",
+      "stage": "Allianz",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T15:45",
+      "end": "2026-08-02T16:45"
+    },
+    {
+      "id": "set-133",
+      "artist": "AMBLE",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T17:15",
+      "end": "2026-08-02T18:00"
+    },
+    {
+      "id": "set-134",
+      "artist": "BEABADOOBEE",
+      "stage": "T-Mobile",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T18:45",
+      "end": "2026-08-02T19:45"
+    },
+    {
+      "id": "set-135",
+      "artist": "CASE OATS",
+      "stage": "BMI",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T15:20",
+      "end": "2026-08-02T16:00"
+    },
+    {
+      "id": "set-136",
+      "artist": "CRUZ BECKHAM AND THE BREAKERS",
+      "stage": "Tito's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T14:15",
+      "end": "2026-08-02T15:00"
+    },
+    {
+      "id": "set-137",
+      "artist": "DESTIN CONRAD",
+      "stage": "Allianz",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T14:00",
+      "end": "2026-08-02T15:00"
+    },
+    {
+      "id": "set-138",
+      "artist": "DOMBRESKY",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T16:15",
+      "end": "2026-08-02T17:15"
+    },
+    {
+      "id": "set-139",
+      "artist": "DUKE DUMONT",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T17:45",
+      "end": "2026-08-02T18:45"
+    },
+    {
+      "id": "set-140",
+      "artist": "EASY HONEY",
+      "stage": "Tito's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T12:45",
+      "end": "2026-08-02T13:30"
+    },
+    {
+      "id": "set-141",
+      "artist": "ELI BROWN",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T19:00",
+      "end": "2026-08-02T20:00"
+    },
+    {
+      "id": "set-142",
+      "artist": "FAKEMINK",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T19:45",
+      "end": "2026-08-02T20:30"
+    },
+    {
+      "id": "set-143",
+      "artist": "HOT MULLIGAN",
+      "stage": "Tito's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T18:00",
+      "end": "2026-08-02T19:00"
+    },
+    {
+      "id": "set-144",
+      "artist": "INJI",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T16:00",
+      "end": "2026-08-02T16:45"
+    },
+    {
+      "id": "set-145",
+      "artist": "JACKIE HOLLANDER",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T12:45",
+      "end": "2026-08-02T13:30"
+    },
+    {
+      "id": "set-146",
+      "artist": "JADE",
+      "stage": "Allianz",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T17:45",
+      "end": "2026-08-02T18:45"
+    },
+    {
+      "id": "set-147",
+      "artist": "JUSTINE SKYE",
+      "stage": "BMI",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T16:30",
+      "end": "2026-08-02T17:10"
+    },
+    {
+      "id": "set-148",
+      "artist": "LOS RETROS",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T17:15",
+      "end": "2026-08-02T18:00"
+    },
+    {
+      "id": "set-149",
+      "artist": "MONALEO",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T18:30",
+      "end": "2026-08-02T19:15"
+    },
+    {
+      "id": "set-150",
+      "artist": "MUNA",
+      "stage": "T-Mobile",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T16:45",
+      "end": "2026-08-02T17:45"
+    },
+    {
+      "id": "set-151",
+      "artist": "NEW CONSTELLATIONS",
+      "stage": "T-Mobile",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T13:15",
+      "end": "2026-08-02T14:00"
+    },
+    {
+      "id": "set-152",
+      "artist": "PORCH LIGHT",
+      "stage": "BMI",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T17:40",
+      "end": "2026-08-02T18:20"
+    },
+    {
+      "id": "set-153",
+      "artist": "RIORDAN",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T15:00",
+      "end": "2026-08-02T16:00"
+    },
+    {
+      "id": "set-154",
+      "artist": "SNACKTIME",
+      "stage": "BMI",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T13:00",
+      "end": "2026-08-02T13:40"
+    },
+    {
+      "id": "set-155",
+      "artist": "STELLA LEFTY",
+      "stage": "Allianz",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T12:30",
+      "end": "2026-08-02T13:15"
+    },
+    {
+      "id": "set-156",
+      "artist": "SUNSHINE",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T12:00",
+      "end": "2026-08-02T12:30"
+    },
+    {
+      "id": "set-157",
+      "artist": "SURFING FOR DAISY",
+      "stage": "BMI",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T14:10",
+      "end": "2026-08-02T14:50"
+    },
+    {
+      "id": "set-158",
+      "artist": "TATE MCRAE",
+      "stage": "T-Mobile",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T20:45",
+      "end": "2026-08-02T22:00"
+    },
+    {
+      "id": "set-159",
+      "artist": "THE BENDS",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T12:50",
+      "end": "2026-08-02T13:30"
+    },
+    {
+      "id": "set-160",
+      "artist": "THE CHAINSMOKERS",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T20:30",
+      "end": "2026-08-02T21:45"
+    },
+    {
+      "id": "set-161",
+      "artist": "THE XX",
+      "stage": "Bud Light",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T20:45",
+      "end": "2026-08-02T22:00"
+    },
+    {
+      "id": "set-162",
+      "artist": "TURNSTILE",
+      "stage": "Bud Light",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T19:00",
+      "end": "2026-08-02T20:00"
+    },
+    {
+      "id": "set-163",
+      "artist": "VANDELUX",
+      "stage": "Tito's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T20:00",
+      "end": "2026-08-02T20:45"
+    },
+    {
+      "id": "set-164",
+      "artist": "WATER FROM YOUR EYES",
+      "stage": "Airbnb",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T14:50",
+      "end": "2026-08-02T15:30"
+    },
+    {
+      "id": "set-165",
+      "artist": "WAYLON WYATT",
+      "stage": "Bud Light",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T15:00",
+      "end": "2026-08-02T16:00"
+    },
+    {
+      "id": "set-166",
+      "artist": "WESTEND",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T13:45",
+      "end": "2026-08-02T14:45"
+    },
+    {
+      "id": "set-167",
+      "artist": "WHATMORE",
+      "stage": "Bud Light",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T13:30",
+      "end": "2026-08-02T14:15"
+    },
+    {
+      "id": "set-168",
+      "artist": "WILL SWINTON",
+      "stage": "BMI",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T18:50",
+      "end": "2026-08-02T19:30"
+    },
+    {
+      "id": "set-169",
+      "artist": "WUNDERHORSE",
+      "stage": "Tito's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T16:00",
+      "end": "2026-08-02T17:00"
+    },
+    {
+      "id": "set-170",
+      "artist": "YOASOBI",
+      "stage": "Bud Light",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T17:00",
+      "end": "2026-08-02T18:00"
+    },
+    {
+      "id": "set-171",
+      "artist": "ZACK MARTINO",
+      "stage": "Perry's",
+      "date": "2026-08-02",
+      "day": "Sunday",
+      "start": "2026-08-02T12:00",
+      "end": "2026-08-02T12:30"
+    }
+  ]
+}

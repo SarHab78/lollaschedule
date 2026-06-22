@@ -1,0 +1,12 @@
+{
+  "_comment": "Approximate walking-minutes position of each stage along Grant Park's north-south axis (the park spans ~1.5mi). Travel time between two stages = |posA - posB|. Estimated from the festival map; tune as needed.",
+  "walkMinutesFromNorth": {
+    "T-Mobile": 2,
+    "BMI": 4,
+    "Tito's": 6,
+    "Allianz": 9,
+    "Airbnb": 12,
+    "Perry's": 18,
+    "Bud Light": 22
+  }
+}
