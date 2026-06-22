@@ -44,7 +44,26 @@ function transitionPenalty(prev: PlannableSet, next: PlannableSet): number {
   return Math.min(next.score, next.score * (shortfall / setLen));
 }
 
-export function optimizeDay(sets: PlannableSet[]): ItineraryEntry[] {
+export function optimizeDay(
+  allSets: PlannableSet[],
+  lockedIds: string[] = [],
+): ItineraryEntry[] {
+  const locked = new Set(lockedIds);
+
+  // Locked picks are mandatory: drop any other set that time-overlaps a lock,
+  // then give locks an overwhelming score so the DP always selects them.
+  const lockedSets = allSets.filter((x) => locked.has(x.id));
+  const overlapsLock = (x: PlannableSet) =>
+    lockedSets.some(
+      (l) =>
+        l.id !== x.id &&
+        minutes(x.start) < minutes(l.end) &&
+        minutes(x.end) > minutes(l.start),
+    );
+  const sets = allSets.filter((x) => locked.has(x.id) || !overlapsLock(x));
+  const LOCK_BONUS = 1e6;
+  const eff = (x: PlannableSet) => x.score + (locked.has(x.id) ? LOCK_BONUS : 0);
+
   // Sort by end time for the classic weighted-interval DP.
   const s = [...sets].sort((a, b) => minutes(a.end) - minutes(b.end));
   const n = s.length;
@@ -66,7 +85,7 @@ export function optimizeDay(sets: PlannableSet[]): ItineraryEntry[] {
   for (let i = 0; i < n; i++) {
     const prevIdx = p[i];
     const penalty = prevIdx >= 0 ? transitionPenalty(s[prevIdx], s[i]) : 0;
-    const take = s[i].score - penalty + (prevIdx >= 0 ? best[prevIdx] : 0);
+    const take = eff(s[i]) - penalty + (prevIdx >= 0 ? best[prevIdx] : 0);
     const skip = i > 0 ? best[i - 1] : 0;
     best[i] = Math.max(take, skip);
   }
@@ -77,7 +96,7 @@ export function optimizeDay(sets: PlannableSet[]): ItineraryEntry[] {
   while (i >= 0) {
     const prevIdx = p[i];
     const penalty = prevIdx >= 0 ? transitionPenalty(s[prevIdx], s[i]) : 0;
-    const take = s[i].score - penalty + (prevIdx >= 0 ? best[prevIdx] : 0);
+    const take = eff(s[i]) - penalty + (prevIdx >= 0 ? best[prevIdx] : 0);
     const skip = i > 0 ? best[i - 1] : 0;
     if (take >= skip) {
       chosen.push(s[i]);
@@ -90,7 +109,7 @@ export function optimizeDay(sets: PlannableSet[]): ItineraryEntry[] {
 
   // For each chosen set, note the best alternatives we passed up at that time.
   return chosen.map((c) => {
-    const overlap = sets
+    const overlap = allSets
       .filter(
         (o) =>
           o.id !== c.id &&

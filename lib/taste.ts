@@ -1,4 +1,10 @@
-import { getTopArtists, getTopTracks, TopArtist } from "./spotify";
+import {
+  getTopArtists,
+  getTopTracks,
+  getRecentlyPlayed,
+  getSavedTracks,
+  TopArtist,
+} from "./spotify";
 
 // A normalized fingerprint of the user's listening, built from Spotify top
 // artists + top tracks across time ranges. This is what we score the lineup on.
@@ -22,11 +28,13 @@ const TERM_WEIGHT: Record<string, number> = {
 };
 
 export async function buildTasteProfile(token: string): Promise<TasteProfile> {
-  const [longA, medA, longT, medT] = await Promise.all([
+  const [longA, medA, longT, medT, recent, saved] = await Promise.all([
     getTopArtists(token, "long_term"),
     getTopArtists(token, "medium_term"),
     getTopTracks(token, "long_term"),
     getTopTracks(token, "medium_term"),
+    getRecentlyPlayed(token).catch(() => []), // optional signals — degrade gracefully
+    getSavedTracks(token).catch(() => []),
   ]);
 
   const affinity = new Map<string, number>();
@@ -56,6 +64,23 @@ export async function buildTasteProfile(token: string): Promise<TasteProfile> {
   };
   longT.forEach((t, i) => addTrackArtists(t.artists.map((x) => x.name), i, TERM_WEIGHT.long_term));
   medT.forEach((t, i) => addTrackArtists(t.artists.map((x) => x.name), i, TERM_WEIGHT.medium_term));
+
+  // Recency: artists you've played lately are current obsessions — boost them
+  // by how often they show up in your recent plays (capped). Saved tracks add a
+  // smaller, steady signal. These nudge affinity up but never override it.
+  const bump = (names: string[], perHit: number, cap: number) => {
+    const counts = new Map<string, number>();
+    for (const n of names) {
+      const key = normalizeName(n);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    for (const [key, c] of counts) {
+      const boost = Math.min(cap, perHit * c);
+      affinity.set(key, Math.min(1, (affinity.get(key) ?? 0) + boost));
+    }
+  };
+  bump(recent.flatMap((t) => t.artists.map((a) => a.name)), 0.12, 0.4); // recently played
+  bump(saved.flatMap((t) => t.artists.map((a) => a.name)), 0.05, 0.2); // saved library
 
   // Normalize genre weights to 0..1.
   const maxGenre = Math.max(1, ...genres.values());

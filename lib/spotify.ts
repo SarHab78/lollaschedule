@@ -117,6 +117,24 @@ export async function getTopTracks(
   return data.items;
 }
 
+// Recently played — a strong signal of current obsessions for recency weighting.
+export async function getRecentlyPlayed(accessToken: string): Promise<TopTrack[]> {
+  const data = await spotifyGet<{ items: { track: TopTrack }[] }>(
+    `/me/player/recently-played?limit=50`,
+    accessToken,
+  );
+  return data.items.map((i) => i.track).filter(Boolean);
+}
+
+// Saved/liked tracks — a broad signal of artists you care about.
+export async function getSavedTracks(accessToken: string): Promise<TopTrack[]> {
+  const data = await spotifyGet<{ items: { track: TopTrack }[] }>(
+    `/me/tracks?limit=50`,
+    accessToken,
+  );
+  return data.items.map((i) => i.track).filter(Boolean);
+}
+
 // Search for an artist by name — used to enrich lineup acts with genres/images.
 export async function searchArtist(
   name: string,
