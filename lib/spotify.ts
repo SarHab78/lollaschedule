@@ -85,14 +85,25 @@ export async function exchangeCodeForTokens(
 // --- Authenticated API calls ------------------------------------------------
 
 export async function spotifyGet<T>(path: string, accessToken: string): Promise<T> {
-  const res = await fetch(`${SPOTIFY_API}${path}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    throw new Error(`Spotify GET ${path} failed (${res.status}): ${await res.text()}`);
+  // Spotify rate-limits per app over a rolling window and returns 429 with a
+  // Retry-After header. Honor it (capped) and retry a few times so a burst of
+  // requests (e.g. paging thousands of saved tracks) self-heals instead of
+  // throwing a "Too many requests" error up to the page.
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${SPOTIFY_API}${path}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    });
+    if (res.status === 429 && attempt < 5) {
+      const retryAfter = Math.min(10, Number(res.headers.get("retry-after") ?? "2") || 2);
+      await new Promise((r) => setTimeout(r, (retryAfter + 0.3) * 1000));
+      continue;
+    }
+    if (!res.ok) {
+      throw new Error(`Spotify GET ${path} failed (${res.status}): ${await res.text()}`);
+    }
+    return res.json();
   }
-  return res.json();
 }
 
 export type TopArtist = {
@@ -158,7 +169,7 @@ export async function getSavedTracks(
   const offsets: number[] = [];
   for (let o = 50; o < total; o += 50) offsets.push(o);
 
-  const CONCURRENCY = 6;
+  const CONCURRENCY = 3; // gentle: avoid tripping Spotify's rolling rate limit
   let idx = 0;
   async function worker() {
     while (idx < offsets.length) {

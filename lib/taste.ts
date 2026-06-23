@@ -54,10 +54,24 @@ export const DEFAULT_TASTE_OPTIONS: TasteOptions = {
 
 const ALL_WINDOWS: TimeWindow[] = ["short_term", "medium_term", "long_term"];
 
+// Building a profile pulls a LOT of Spotify calls (3 windows of artists+tracks,
+// recent, followed, and up to 5000 saved tracks ≈ 100 requests). Your library
+// doesn't change minute-to-minute, so cache the result per token+window for a
+// few minutes — reloads then cost zero API calls and can't trip the rate limit.
+const profileCache = new Map<string, { at: number; profile: TasteProfile }>();
+const PROFILE_TTL_MS = 10 * 60 * 1000;
+
 export async function buildTasteProfile(
   token: string,
   opts: TasteOptions = DEFAULT_TASTE_OPTIONS,
 ): Promise<TasteProfile> {
+  const cacheKey = `${token.slice(-16)}:${opts.window}`;
+  const hit = profileCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < PROFILE_TTL_MS) {
+    console.log(`[taste] cache hit for window ${opts.window} — skipping Spotify fetch`);
+    return hit.profile;
+  }
+
   // Favorites are favorites regardless of the chosen window: we always read
   // EVERY window for "do you know/love them" (affinity), and use the SELECTED
   // window only as an emphasis signal — it nudges ranking, never demotes.
@@ -173,10 +187,12 @@ export async function buildTasteProfile(
   const maxGenre = Math.max(1, ...genres.values());
   const genreWeights = new Map([...genres].map(([g, v]) => [g, v / maxGenre]));
 
-  return {
+  const profile: TasteProfile = {
     affinityByName: affinity,
     emphasisByName: emphasis,
     genreWeights,
     sourcesByName: sources,
   };
+  profileCache.set(cacheKey, { at: Date.now(), profile });
+  return profile;
 }
