@@ -1,83 +1,53 @@
-import { ArtistMeta } from "./enrich";
 import { normalizeName, TasteProfile } from "./taste";
+import { Fit } from "./predict";
 
-export type Tier = "must-see" | "worth-it" | "discovery" | "wildcard";
+// Three tiers. There is no "wildcard": any artist you don't directly listen to
+// is a Discovery, ranked among the others by an AI taste-fit score.
+export type Tier = "must-see" | "worth-it" | "discovery";
 
 export type ScoredArtist = {
   artist: string;
-  score: number; // 0..100
+  score: number; // 0..100, optimizer ranking — banded so direct > discovery
+  fit: number; // 0..100, AI taste-fit (discoveries only; 0 for direct artists)
   tier: Tier;
   directAffinity: number; // 0..1, you actually play them
-  genreMatch: number; // 0..1, matches your genre fingerprint
   reason: string;
 };
 
-// How much you'd enjoy a lineup artist =
-//   70% do you already play them  +  30% do they match your genres
-// Direct affinity dominates (a known love beats a genre guess), while genre
-// match surfaces "discovery" acts you don't play yet but fit your taste.
-const W_DIRECT = 70;
-const W_GENRE = 30;
-
-function genreMatch(meta: ArtistMeta | undefined, taste: TasteProfile): number {
-  if (!meta || meta.genres.length === 0) return 0;
-  let best = 0;
-  let sum = 0;
-  for (const g of meta.genres) {
-    const w = taste.genreWeights.get(g) ?? 0;
-    best = Math.max(best, w);
-    sum += w;
-  }
-  // Reward both a strong single match and broad overlap.
-  return Math.min(1, best * 0.7 + (sum / meta.genres.length) * 0.3);
-}
-
+// Score bands keep the optimizer preferring artists you actually listen to over
+// AI guesses, while still ranking discoveries by fit. Gaps between bands exceed
+// the emphasis bump (≤4) so a window nudge can never cross a tier boundary.
+//   must-see  90..100
+//   worth-it  60..80  (+bump → ≤84)
+//   discovery  1..50  (+bump → ≤54, but discoveries rarely have emphasis)
 export function scoreArtist(
   artistName: string,
-  meta: ArtistMeta | undefined,
   taste: TasteProfile,
+  predicted?: Fit,
 ): ScoredArtist {
   const key = normalizeName(artistName);
   const direct = taste.affinityByName.get(key) ?? 0; // window-independent → tier
-  const emphasis = taste.emphasisByName.get(key) ?? 0; // selected window → nudge only
-  const genre = genreMatch(meta, taste);
-  const pop = (meta?.popularity ?? 0) / 100;
-  const base = W_DIRECT * direct + W_GENRE * genre; // 0..100, real enjoyment
-
-  // We schedule the whole day, so even with no match we still pick *something*
-  // for each slot. Rank those fillers by genre fit + popularity so they're the
-  // most promising unfamiliar acts (a worthwhile discovery), not random ones —
-  // and so the score is never a flat, meaningless 0.
-  const discoveryPotential = 12 * genre + 6 * pop; // 0..18
-
-  // Tier (below) uses only `direct`/`genre` so colors are window-independent;
-  // emphasis just adds up to 8 points to break conflict ties toward the window.
-  const score = Math.max(1, Math.round(Math.max(base, discoveryPotential) + 8 * emphasis));
+  const emphasis = taste.emphasisByName.get(key) ?? 0; // selected window → nudge
+  const fit = predicted ? Math.max(0, Math.min(100, predicted.fit)) : 0;
+  const bump = Math.round(4 * emphasis);
 
   let tier: Tier;
+  let score: number;
   let reason: string;
+
   if (direct >= 0.5) {
     tier = "must-see";
+    score = Math.min(100, 90 + Math.round(10 * Math.min(1, direct)) + bump);
     reason = "One of your top artists";
   } else if (direct >= 0.15) {
     tier = "worth-it";
+    score = Math.min(84, 60 + Math.round((20 * (direct - 0.15)) / 0.35) + bump);
     reason = "You listen to them";
-  } else if (direct > 0 && genre >= 0.3) {
-    tier = "worth-it";
-    reason = "On your radar + fits your taste";
-  } else if (genre >= 0.45) {
-    tier = "discovery";
-    reason = "New to you, but right up your alley";
   } else {
-    // Filler we picked to keep your day full — the best unfamiliar option here.
-    tier = "wildcard";
-    reason =
-      genre >= 0.2
-        ? "Wildcard — leans toward your taste, worth a look"
-        : pop >= 0.6
-          ? "Wildcard — a popular act to fill the slot"
-          : "Wildcard — picked to keep your day full";
+    tier = "discovery";
+    score = Math.min(54, 1 + Math.round(49 * (fit / 100)) + bump);
+    reason = predicted?.reason || "A fresh pick to fill out your day";
   }
 
-  return { artist: artistName, score, tier, directAffinity: direct, genreMatch: genre, reason };
+  return { artist: artistName, score, fit, tier, directAffinity: direct, reason };
 }

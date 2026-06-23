@@ -12,6 +12,10 @@
 .env*.local
 .env
 
+# AI prediction cache — user-taste-specific, regenerated at runtime (unlike
+# enriched-cache.json which is global artist images and is committed)
+data/predict-cache.json
+
 # misc
 .DS_Store
 *.pem

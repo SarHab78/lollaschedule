@@ -14,6 +14,7 @@ export type UISet = {
   start: string;
   end: string;
   score: number;
+  fit: number; // AI taste-fit 0..100 (discoveries; 0 for direct artists)
   tier: Tier;
   reason: string;
   image: string | null;
@@ -34,13 +35,11 @@ const TIER_COLOR: Record<Tier, string> = {
   "must-see": "#1db954", // green
   "worth-it": "#4ad6ff", // blue
   discovery: "#b07cff", // purple
-  wildcard: "#f0a24a", // amber
 };
 const TIER_LABEL: Record<Tier, string> = {
   "must-see": "🔥 Must-see",
   "worth-it": "👍 Worth it",
   discovery: "🔮 Discovery",
-  wildcard: "🎲 Wildcard",
 };
 
 const DAY_START = 12 * 60;
@@ -132,14 +131,14 @@ export default function ScheduleClient({
     return [...yourChosenIds].map((id) => byId.get(id)!).filter(Boolean).sort((a, b) => a.start.localeCompare(b.start));
   }, [days, yourChosenIds]);
 
-  // High-affinity sets (not wildcards) that a conflict knocked out of the plan,
+  // High-affinity sets (direct favorites, not discoveries) a conflict knocked out,
   // plus what you're seeing instead — so you can spot a favorite you're missing.
   const missed = useMemo(() => {
     const rows: { set: UISet; day: string; conflict?: UISet }[] = [];
     itineraries.forEach((it, di) => {
       const d = days[di];
       d.sets.forEach((s) => {
-        if (it.chosenIds.has(s.id) || s.tier === "wildcard") return;
+        if (it.chosenIds.has(s.id) || s.tier === "discovery") return;
         const conflict = d.sets.find(
           (o) => it.chosenIds.has(o.id) && mins(o.start) < mins(s.end) && mins(o.end) > mins(s.start),
         );
@@ -299,8 +298,7 @@ export default function ScheduleClient({
         <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem" }}>
           <li><span style={{ color: TIER_COLOR["must-see"], fontWeight: 700 }}>🔥 Must-see</span> — one of your top artists.</li>
           <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700 }}>👍 Worth it</span> — an artist you already listen to.</li>
-          <li><span style={{ color: TIER_COLOR.discovery, fontWeight: 700 }}>🔮 Discovery</span> — new to you, but a strong match to your taste.</li>
-          <li><span style={{ color: TIER_COLOR.wildcard, fontWeight: 700 }}>🎲 Wildcard</span> — no real match for this slot, so we picked the most promising unfamiliar act to keep your day full and maybe surprise you.</li>
+          <li><span style={{ color: TIER_COLOR.discovery, fontWeight: 700 }}>🔮 Discovery</span> — an artist you don&apos;t play yet, AI-ranked by how well they fit your taste. The <strong>fit</strong> score (0–100) on each shows the prediction; higher = better match.</li>
           <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700, border: `1.5px dashed ${TIER_COLOR["worth-it"]}`, borderRadius: 4, padding: "0 4px" }}>Dashed colored outline</span> = a favorite you&apos;re <strong>missing</strong> (a conflict beat it). See the ⭐ panel above to lock it back in.</li>
           <li><span style={{ color: "#7a7a84", fontWeight: 700 }}>Dark gray boxes</span> are other sets we didn&apos;t pick.</li>
           <li><strong>Click</strong> a box to lock it (🔒) and re-optimize · colored dots = a friend is going too.</li>
@@ -348,8 +346,8 @@ export default function ScheduleClient({
                   const top = (mins(s.start) - DAY_START) * PX_PER_MIN;
                   const height = Math.max(18, (mins(s.end) - mins(s.start)) * PX_PER_MIN - 2);
                   const isChosen = dayItin.chosenIds.has(s.id);
-                  // A real match (not a wildcard) that got bumped by a conflict.
-                  const isMissed = !isChosen && s.tier !== "wildcard";
+                  // A direct-listen favorite (not a discovery) bumped by a conflict.
+                  const isMissed = !isChosen && s.tier !== "discovery";
                   const isLocked = lockSet.has(s.id);
                   const fos = friendsOnSet(s.id);
                   const color = TIER_COLOR[s.tier];
@@ -357,7 +355,7 @@ export default function ScheduleClient({
                     <button
                       key={s.id}
                       onClick={() => toggleLock(s.id)}
-                      title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${s.score}) — ${s.reason}\nClick to lock`}
+                      title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${s.tier === "discovery" ? `${s.fit} fit` : s.score}) — ${s.reason}\nClick to lock`}
                       style={{
                         position: "absolute", top, left: 2, right: 2, height, textAlign: "left", overflow: "hidden",
                         borderRadius: 5, padding: "2px 5px", cursor: "pointer",
@@ -375,7 +373,7 @@ export default function ScheduleClient({
                       }}
                     >
                       {isLocked ? "🔒 " : ""}{s.artist}
-                      <span style={{ display: "block", fontWeight: 400, fontSize: "0.66rem", opacity: 0.85 }}>{fmt(s.start)} · {s.score}</span>
+                      <span style={{ display: "block", fontWeight: 400, fontSize: "0.66rem", opacity: 0.85 }}>{fmt(s.start)} · {s.tier === "discovery" ? `${s.fit} fit` : s.score}</span>
                       {fos.length > 0 && (
                         <span style={{ position: "absolute", top: 3, right: 3, display: "flex", gap: 2 }}>
                           {fos.map((fi) => (

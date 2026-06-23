@@ -10,10 +10,13 @@ import {
 import { enrichArtists } from "@/lib/enrich";
 import { getLineup, uniqueArtists } from "@/lib/lineup";
 import { scoreArtist } from "@/lib/scoring";
+import { predictFits } from "@/lib/predict";
 import stageDistances from "@/data/stage-distances.json";
 import ScheduleClient, { UISet, DayData } from "./ScheduleClient";
 
 export const dynamic = "force-dynamic";
+// The AI fit prediction (cold/uncached) can exceed Vercel's default 10s budget.
+export const maxDuration = 60;
 
 type Props = { searchParams: Promise<{ window?: string; sources?: string }> };
 
@@ -43,13 +46,25 @@ export default async function Schedule({ searchParams }: Props) {
   const taste = await buildTasteProfile(token, options);
   const meta = await enrichArtists(uniqueArtists(), token);
   const lineup = getLineup();
+  const artists = uniqueArtists();
+
+  // AI discovery: artists you don't directly listen to (would-be discoveries)
+  // get a taste-fit score from Claude, ranked against your demonstrated favorites.
+  const isDirect = (name: string) => (taste.affinityByName.get(normalizeName(name)) ?? 0) >= 0.15;
+  const favorites = [...taste.affinityByName.entries()]
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 60)
+    .map(([name]) => name);
+  const candidates = artists.filter((a) => !isDirect(a));
+  const fits = await predictFits(favorites, candidates).catch(() => new Map());
 
   // Score each artist once, then attach to every set they play.
   const scoredArtist = new Map<string, ReturnType<typeof scoreArtist>>();
   const byDate = new Map<string, UISet[]>();
   for (const set of lineup.sets) {
     const sc =
-      scoredArtist.get(set.artist) ?? scoreArtist(set.artist, meta.get(set.artist), taste);
+      scoredArtist.get(set.artist) ?? scoreArtist(set.artist, taste, fits.get(set.artist));
     scoredArtist.set(set.artist, sc);
     const ui: UISet = {
       id: set.id,
@@ -58,6 +73,7 @@ export default async function Schedule({ searchParams }: Props) {
       start: set.start,
       end: set.end,
       score: sc.score,
+      fit: sc.fit,
       tier: sc.tier,
       reason: sc.reason,
       image: meta.get(set.artist)?.image ?? null,
