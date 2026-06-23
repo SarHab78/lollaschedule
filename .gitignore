@@ -24,3 +24,4 @@ npm-debug.log*
 # typescript
 next-env.d.ts
 *.tsbuildinfo
+_api-poll.mjs
