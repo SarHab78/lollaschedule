@@ -43,8 +43,18 @@ export default async function Schedule({ searchParams }: Props) {
   if (!token) redirect("/?error=not_logged_in");
 
   const options = parseOptions(await searchParams);
-  const taste = await buildTasteProfile(token, options);
-  const meta = await enrichArtists(uniqueArtists(), token);
+
+  // Spotify's rate limit is app-wide; under load a fetch can 429. Fail gracefully
+  // to a friendly retry screen instead of crashing the page with a stack trace.
+  let taste: Awaited<ReturnType<typeof buildTasteProfile>>;
+  let meta: Awaited<ReturnType<typeof enrichArtists>>;
+  try {
+    taste = await buildTasteProfile(token, options);
+    meta = await enrichArtists(uniqueArtists(), token);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    redirect(`/?error=${msg.includes("429") ? "spotify_busy" : "spotify_failed"}`);
+  }
   const lineup = getLineup();
   const artists = uniqueArtists();
 

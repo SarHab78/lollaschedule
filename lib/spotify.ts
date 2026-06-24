@@ -94,9 +94,11 @@ export async function spotifyGet<T>(path: string, accessToken: string): Promise<
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
     });
-    if (res.status === 429 && attempt < 5) {
-      const retryAfter = Math.min(10, Number(res.headers.get("retry-after") ?? "2") || 2);
-      await new Promise((r) => setTimeout(r, (retryAfter + 0.3) * 1000));
+    // Retry 429 a couple times, but cap the wait hard so an interactive page
+    // never hangs ~50s waiting out Spotify — fail fast and let the UI recover.
+    if (res.status === 429 && attempt < 2) {
+      const retryAfter = Math.min(4, Number(res.headers.get("retry-after") ?? "1") || 1);
+      await new Promise((r) => setTimeout(r, (retryAfter + 0.2) * 1000));
       continue;
     }
     if (!res.ok) {
@@ -155,7 +157,7 @@ export async function getRecentlyPlayed(accessToken: string): Promise<TopTrack[]
 // to `max` so artists beyond your first 50 likes still get detected.
 export async function getSavedTracks(
   accessToken: string,
-  max = 5000,
+  max = 1500, // ~30 requests; deep enough for taste, 3x lighter on the shared quota
 ): Promise<TopTrack[]> {
   // First page tells us the library total, then fetch the rest concurrently
   // (bounded) rather than 40 slow sequential round-trips.

@@ -12,12 +12,21 @@ export default async function Home({ searchParams }: Props) {
         conflicts and surfacing artists you&apos;d love but haven&apos;t found yet.
       </p>
 
-      {error && (
+      {error === "spotify_busy" ? (
+        <div className="error">
+          Spotify is temporarily rate-limiting us (too many requests in a short window).
+          Wait a minute, then hit Connect again — your data&apos;s fine, it just needs a breather.
+        </div>
+      ) : error === "spotify_failed" ? (
+        <div className="error">
+          Couldn&apos;t reach Spotify just now. Wait a moment and try connecting again.
+        </div>
+      ) : error ? (
         <div className="error">
           Login error: {error}. If this says &quot;user not registered,&quot; add your Spotify
           account under your app&apos;s Settings → User Management in the developer dashboard.
         </div>
-      )}
+      ) : null}
 
       <a className="btn" href="/login">
         Connect Spotify
