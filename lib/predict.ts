@@ -12,8 +12,11 @@ import crypto from "crypto";
 
 export type Fit = { fit: number; reason: string };
 
-// One-line swap to a stronger/cheaper model if desired (opus-4-8 / haiku-4-5).
-const MODEL = "claude-sonnet-4-6";
+// Sonnet refused to use the top of the 0-100 range (ceiling ~78); Opus calibrates
+// far better. One-line swap back to claude-sonnet-4-6 if speed/cost matters more.
+const MODEL = "claude-opus-4-8";
+// Bump when the prompt/calibration changes so cached scores auto-invalidate.
+const PROMPT_VERSION = "v2";
 const CACHE_PATH = join(process.cwd(), "data", "predict-cache.json");
 // Score in small parallel batches (one 137-artist call took 23-65s). Keep
 // concurrency modest so we don't trip Anthropic 429/529 overload ourselves.
@@ -60,7 +63,7 @@ function saveDisk(cache: CacheShape) {
 // Favorites change ⇒ new key ⇒ stale predictions auto-invalidate.
 function keyFor(favorites: string[], candidates: string[]): string {
   const h = crypto.createHash("sha256");
-  h.update(`${MODEL}|${favorites.map(norm).join(",")}|${[...candidates].map(norm).sort().join(",")}`);
+  h.update(`${MODEL}|${PROMPT_VERSION}|${favorites.map(norm).join(",")}|${[...candidates].map(norm).sort().join(",")}`);
   return h.digest("hex").slice(0, 16);
 }
 
@@ -169,12 +172,21 @@ async function scoreChunk(
 ): Promise<{ ok: boolean; fits: Record<string, Fit> }> {
   const system =
     "You are a music recommender. You'll get a list of artists a user " +
-    "demonstrably likes (strongest first), then a short list of candidate " +
-    "artists. For EACH candidate, return a fit score 0-100 for how much THIS " +
-    "user would enjoy them, judged by sonic, genre, scene, and era similarity " +
-    "to their favorites. Be honest and calibrated: 80-100 = strong match, " +
-    "40-79 = plausible, 0-39 = weak or you don't know the artist. Return EVERY " +
-    "candidate exactly once using its name verbatim. Reason: at most 6 words.";
+    "demonstrably likes (STRONGEST FIRST — the earliest names are their core " +
+    "taste), then a short list of candidate artists. Score EACH candidate 0-100 " +
+    "for how much THIS user would enjoy them, by sonic/genre/scene/era " +
+    "similarity to their favorites.\n\n" +
+    "Use the FULL range and be DECISIVE — do not cluster everything in 55-72:\n" +
+    "- 85-100: clearly the same lane as their top favorites, or directly " +
+    "adjacent to an artist NAMED in their list (shares genre/scene with them).\n" +
+    "- 65-84: solid genre overlap with their taste.\n" +
+    "- 40-64: loosely related, one-dimensional overlap.\n" +
+    "- 15-39: a different lane from their taste.\n" +
+    "- 0-14: you don't recognize the artist, or a clear clash.\n\n" +
+    "Critical: if your reason cites an artist who is LITERALLY in their " +
+    "favorites (e.g. 'Charli XCX adjacent' when Charli XCX is listed), that's an " +
+    "85+, never middling. Return EVERY candidate exactly once using its name " +
+    "verbatim. Reason: at most 6 words.";
   const userMsg =
     `User's favorite artists (strongest first):\n${favorites.join("\n")}\n\n` +
     `Candidates to score:\n${candidates.join("\n")}`;

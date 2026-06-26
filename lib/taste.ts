@@ -45,7 +45,7 @@ export type TasteOptions = {
 };
 
 export const DEFAULT_TASTE_OPTIONS: TasteOptions = {
-  window: "medium_term",
+  window: "long_term", // "All time" — favorites are window-independent anyway; this is the default emphasis
   useTopArtists: true,
   useTopTracks: true,
   useRecent: true,

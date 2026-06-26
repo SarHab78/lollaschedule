@@ -45,6 +45,9 @@ const TIER_LABEL: Record<Tier, string> = {
 const DAY_START = 12 * 60;
 const DAY_END = 22 * 60;
 const PX_PER_MIN = 1.3;
+// A 🔮 discovery at/above this AI fit is "strong" — surfaced (dashed outline +
+// ⭐ panel) when a conflict knocks it out, so you don't miss a great rec. Tunable.
+const HIGH_FIT = 70;
 
 function mins(iso: string): number {
   const [, t] = iso.split("T");
@@ -57,6 +60,41 @@ function fmt(iso: string): string {
   const ampm = h >= 12 ? "pm" : "am";
   const hr = h % 12 === 0 ? 12 : h % 12;
   return m === 0 ? `${hr}${ampm}` : `${hr}:${String(m).padStart(2, "0")}${ampm}`;
+}
+
+// Lay out a stage's sets into side-by-side lanes so overlapping sets (e.g. a
+// data conflict where two acts share a stage+time, or back-to-back overlaps)
+// render legibly next to each other instead of stacking on top. Returns
+// id -> { lane index, number of lanes in that set's overlap cluster }.
+function layoutLanes(sets: UISet[]): Map<string, { lane: number; lanes: number }> {
+  const res = new Map<string, { lane: number; lanes: number }>();
+  const sorted = [...sets].sort((a, b) => mins(a.start) - mins(b.start) || mins(a.end) - mins(b.end));
+  let cluster: UISet[] = [];
+  let clusterEnd = -1;
+  const flush = (cl: UISet[]) => {
+    const laneEnds: number[] = []; // lane -> end-minute of its last set
+    for (const s of cl) {
+      let lane = laneEnds.findIndex((end) => mins(s.start) >= end);
+      if (lane === -1) {
+        lane = laneEnds.length;
+        laneEnds.push(0);
+      }
+      laneEnds[lane] = mins(s.end);
+      res.set(s.id, { lane, lanes: 0 });
+    }
+    for (const s of cl) res.get(s.id)!.lanes = laneEnds.length;
+  };
+  for (const s of sorted) {
+    if (cluster.length && mins(s.start) >= clusterEnd) {
+      flush(cluster);
+      cluster = [];
+      clusterEnd = -1;
+    }
+    cluster.push(s);
+    clusterEnd = Math.max(clusterEnd, mins(s.end));
+  }
+  if (cluster.length) flush(cluster);
+  return res;
 }
 
 // Small localStorage-backed state so locks/excludes/friends survive reloads and
@@ -131,20 +169,24 @@ export default function ScheduleClient({
     return [...yourChosenIds].map((id) => byId.get(id)!).filter(Boolean).sort((a, b) => a.start.localeCompare(b.start));
   }, [days, yourChosenIds]);
 
-  // High-affinity sets (direct favorites, not discoveries) a conflict knocked out,
-  // plus what you're seeing instead — so you can spot a favorite you're missing.
+  // Sets a conflict knocked out that you'd want to know about: direct favorites
+  // (must-see/worth-it) AND strong AI discoveries (fit ≥ HIGH_FIT). Shows what
+  // you're missing + what beat it, so you can lock it back in.
   const missed = useMemo(() => {
     const rows: { set: UISet; day: string; conflict?: UISet }[] = [];
     itineraries.forEach((it, di) => {
       const d = days[di];
       d.sets.forEach((s) => {
-        if (it.chosenIds.has(s.id) || s.tier === "discovery") return;
+        if (it.chosenIds.has(s.id)) return;
+        if (s.tier === "discovery" && s.fit < HIGH_FIT) return; // weak discovery — skip
         const conflict = d.sets.find(
           (o) => it.chosenIds.has(o.id) && mins(o.start) < mins(s.end) && mins(o.end) > mins(s.start),
         );
         rows.push({ set: s, day: d.label, conflict });
       });
     });
+    // Direct favorites (banded score 60-100) sort above discoveries (≤54); within
+    // each, higher first. For discoveries that means higher fit first.
     return rows.sort((a, b) => b.set.score - a.set.score);
   }, [days, itineraries]);
 
@@ -260,24 +302,24 @@ export default function ScheduleClient({
       {/* ---- Missing favorites ---- */}
       <details className="no-print" style={panel} open={missedOpen} onToggle={(e) => setMissedOpen((e.target as HTMLDetailsElement).open)}>
         <summary style={summary}>
-          ⭐ Missing favorites {missed.length > 0 && <span style={{ color: "#ffd35c" }}>· {missed.length}</span>}
+          ⭐ Missing picks {missed.length > 0 && <span style={{ color: "#ffd35c" }}>· {missed.length}</span>}
         </summary>
         <div style={{ marginTop: "0.75rem" }}>
           {missed.length === 0 ? (
             <p style={{ fontSize: "0.85rem", color: "#8a8a94", margin: 0 }}>
-              Nothing — every artist you rate highly made the cut. 🎉
+              Nothing — every favorite and strong discovery made the cut. 🎉
             </p>
           ) : (
             <>
               <p style={{ fontSize: "0.82rem", color: "#8a8a94", margin: "0 0 0.6rem" }}>
-                Artists you rate highly that a conflict knocked out. <strong>Lock</strong> one to force it in —
-                the day re-optimizes around it (and whatever it bumps shows up here instead).
+                Favorites you listen to — and <span style={{ color: TIER_COLOR.discovery }}>🔮 strong discoveries</span> (high AI fit) —
+                that a conflict knocked out. <strong>Lock</strong> one to force it in; the day re-optimizes around it.
               </p>
               {missed.slice(0, 30).map(({ set: s, day, conflict }) => (
                 <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "0.4rem 0", borderTop: "1px solid #26262f", fontSize: "0.85rem", flexWrap: "wrap" }}>
                   <span style={{ width: 10, height: 10, borderRadius: 3, background: TIER_COLOR[s.tier], flexShrink: 0 }} />
                   <span style={{ fontWeight: 600 }}>{s.artist}</span>
-                  <span style={{ color: "#8a8a94" }}>{day} {fmt(s.start)} · {s.stage} · {s.score}</span>
+                  <span style={{ color: "#8a8a94" }}>{day} {fmt(s.start)} · {s.stage} · {s.tier === "discovery" ? `${s.fit} fit` : s.score}</span>
                   {conflict && <span style={{ color: "#6a6a74" }}>— clashes with {conflict.artist}</span>}
                   <button className="btn" style={{ marginLeft: "auto", padding: "0.3rem 0.85rem", fontSize: "0.8rem", background: lockSet.has(s.id) ? "#1db954" : "#26262f" }} onClick={() => toggleLock(s.id)}>
                     {lockSet.has(s.id) ? "🔒 Locked" : "Lock in"}
@@ -299,7 +341,7 @@ export default function ScheduleClient({
           <li><span style={{ color: TIER_COLOR["must-see"], fontWeight: 700 }}>🔥 Must-see</span> — one of your top artists.</li>
           <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700 }}>👍 Worth it</span> — an artist you already listen to.</li>
           <li><span style={{ color: TIER_COLOR.discovery, fontWeight: 700 }}>🔮 Discovery</span> — an artist you don&apos;t play yet, AI-ranked by how well they fit your taste. The <strong>fit</strong> score (0–100) on each shows the prediction; higher = better match.</li>
-          <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700, border: `1.5px dashed ${TIER_COLOR["worth-it"]}`, borderRadius: 4, padding: "0 4px" }}>Dashed colored outline</span> = a favorite you&apos;re <strong>missing</strong> (a conflict beat it). See the ⭐ panel above to lock it back in.</li>
+          <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700, border: `1.5px dashed ${TIER_COLOR["worth-it"]}`, borderRadius: 4, padding: "0 4px" }}>Dashed colored outline</span> = a favorite — or a <strong>strong 🔮 discovery</strong> (high AI fit) — you&apos;re <strong>missing</strong> because a conflict beat it. See the ⭐ panel above to lock it back in.</li>
           <li><span style={{ color: "#7a7a84", fontWeight: 700 }}>Dark gray boxes</span> are other sets we didn&apos;t pick.</li>
           <li><strong>Click</strong> a box to lock it (🔒) and re-optimize · colored dots = a friend is going too.</li>
         </ul>
@@ -340,14 +382,21 @@ export default function ScheduleClient({
               {Array.from({ length: (DAY_END - DAY_START) / 60 }, (_, i) => (
                 <div key={i} style={{ position: "absolute", top: i * 60 * PX_PER_MIN, left: 0, right: 0, borderTop: "1px solid #1f1f27" }} />
               ))}
-              {day.sets
-                .filter((s) => s.stage === stage)
-                .map((s) => {
+              {(() => {
+                const stageSets = day.sets.filter((s) => s.stage === stage);
+                const lanes = layoutLanes(stageSets);
+                return stageSets.map((s) => {
                   const top = (mins(s.start) - DAY_START) * PX_PER_MIN;
                   const height = Math.max(18, (mins(s.end) - mins(s.start)) * PX_PER_MIN - 2);
+                  // Side-by-side lane within this stage (1 lane = full width).
+                  const li = lanes.get(s.id);
+                  const laneIdx = li?.lane ?? 0;
+                  const laneCount = li?.lanes ?? 1;
+                  const widthPct = 100 / laneCount;
                   const isChosen = dayItin.chosenIds.has(s.id);
-                  // A direct-listen favorite (not a discovery) bumped by a conflict.
-                  const isMissed = !isChosen && s.tier !== "discovery";
+                  // A favorite OR a strong discovery (fit ≥ HIGH_FIT) bumped by a conflict.
+                  const isMissed =
+                    !isChosen && (s.tier !== "discovery" || s.fit >= HIGH_FIT);
                   const isLocked = lockSet.has(s.id);
                   const fos = friendsOnSet(s.id);
                   const color = TIER_COLOR[s.tier];
@@ -357,7 +406,8 @@ export default function ScheduleClient({
                       onClick={() => toggleLock(s.id)}
                       title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${s.tier === "discovery" ? `${s.fit} fit` : s.score}) — ${s.reason}\nClick to lock`}
                       style={{
-                        position: "absolute", top, left: 2, right: 2, height, textAlign: "left", overflow: "hidden",
+                        position: "absolute", top, height, textAlign: "left", overflow: "hidden",
+                        left: `calc(${laneIdx * widthPct}% + 2px)`, width: `calc(${widthPct}% - 4px)`,
                         borderRadius: 5, padding: "2px 5px", cursor: "pointer",
                         background: isChosen ? color : "#1a1a22",
                         color: isChosen ? "#06210f" : isMissed ? color : "#7a7a84",
@@ -383,7 +433,8 @@ export default function ScheduleClient({
                       )}
                     </button>
                   );
-                })}
+                });
+              })()}
             </div>
           </div>
         ))}

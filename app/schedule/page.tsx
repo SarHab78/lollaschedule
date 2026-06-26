@@ -67,6 +67,8 @@ export default async function Schedule({ searchParams }: Props) {
     .slice(0, 60)
     .map(([name]) => name);
   const candidates = artists.filter((a) => !isDirect(a));
+  console.log(`[predict] favorites fed to AI (${favorites.length}):`, favorites.join(", "));
+  console.log(`[predict] candidates to score: ${candidates.length}`);
   const fits = await predictFits(favorites, candidates).catch(() => new Map());
 
   // Score each artist once, then attach to every set they play.
