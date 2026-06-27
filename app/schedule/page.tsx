@@ -8,6 +8,7 @@ import {
   TimeWindow,
 } from "@/lib/taste";
 import { enrichArtists } from "@/lib/enrich";
+import { getMe } from "@/lib/spotify";
 import { getLineup, uniqueArtists } from "@/lib/lineup";
 import { scoreArtist } from "@/lib/scoring";
 import { predictFits } from "@/lib/predict";
@@ -49,7 +50,8 @@ export default async function Schedule({ searchParams }: Props) {
   let taste: Awaited<ReturnType<typeof buildTasteProfile>>;
   let meta: Awaited<ReturnType<typeof enrichArtists>>;
   try {
-    taste = await buildTasteProfile(token, options);
+    const { id: userId } = await getMe(token); // stable key for the durable cache
+    taste = await buildTasteProfile(token, userId, options);
     meta = await enrichArtists(uniqueArtists(), token);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";

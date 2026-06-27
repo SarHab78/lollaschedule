@@ -5,6 +5,7 @@ import {
   getSavedTracks,
   getFollowedArtists,
 } from "./spotify";
+import { kvGet, kvSet } from "./kv";
 
 // A normalized fingerprint of the user's listening, built from Spotify top
 // artists + top tracks across time ranges. This is what we score the lineup on.
@@ -55,21 +56,46 @@ export const DEFAULT_TASTE_OPTIONS: TasteOptions = {
 const ALL_WINDOWS: TimeWindow[] = ["short_term", "medium_term", "long_term"];
 
 // Building a profile pulls a LOT of Spotify calls (3 windows of artists+tracks,
-// recent, followed, and up to 5000 saved tracks ≈ 100 requests). Your library
-// doesn't change minute-to-minute, so cache the result per token+window for a
-// few minutes — reloads then cost zero API calls and can't trip the rate limit.
-const profileCache = new Map<string, { at: number; profile: TasteProfile }>();
-const PROFILE_TTL_MS = 10 * 60 * 1000;
+// recent, followed, and up to 1500 saved tracks ≈ 35 requests). Your library
+// doesn't change minute-to-minute, so cache the result durably in KV keyed by
+// the STABLE Spotify user ID (the token rotates each login) — reloads and
+// re-logins then cost zero Spotify calls and can't trip the app-wide rate limit.
+const PROFILE_TTL = 60 * 60 * 24; // 24h
+
+// TasteProfile holds Maps/Sets, which don't survive JSON — (de)serialize for KV.
+type SerializedProfile = {
+  affinity: [string, number][];
+  emphasis: [string, number][];
+  genres: [string, number][];
+  sources: [string, string[]][];
+};
+function serializeProfile(p: TasteProfile): SerializedProfile {
+  return {
+    affinity: [...p.affinityByName],
+    emphasis: [...p.emphasisByName],
+    genres: [...p.genreWeights],
+    sources: [...p.sourcesByName].map(([k, v]) => [k, [...v]]),
+  };
+}
+function deserializeProfile(s: SerializedProfile): TasteProfile {
+  return {
+    affinityByName: new Map(s.affinity),
+    emphasisByName: new Map(s.emphasis),
+    genreWeights: new Map(s.genres),
+    sourcesByName: new Map(s.sources.map(([k, v]) => [k, new Set(v)])),
+  };
+}
 
 export async function buildTasteProfile(
   token: string,
+  userId: string,
   opts: TasteOptions = DEFAULT_TASTE_OPTIONS,
 ): Promise<TasteProfile> {
-  const cacheKey = `${token.slice(-16)}:${opts.window}`;
-  const hit = profileCache.get(cacheKey);
-  if (hit && Date.now() - hit.at < PROFILE_TTL_MS) {
-    console.log(`[taste] cache hit for window ${opts.window} — skipping Spotify fetch`);
-    return hit.profile;
+  const cacheKey = `taste:${userId}:${opts.window}`;
+  const cached = await kvGet<SerializedProfile>(cacheKey);
+  if (cached) {
+    console.log(`[taste] cache hit (${opts.window}) — skipping Spotify fetch`);
+    return deserializeProfile(cached);
   }
 
   // Favorites are favorites regardless of the chosen window: we always read
@@ -193,6 +219,6 @@ export async function buildTasteProfile(
     genreWeights,
     sourcesByName: sources,
   };
-  profileCache.set(cacheKey, { at: Date.now(), profile });
+  await kvSet(cacheKey, serializeProfile(profile), PROFILE_TTL);
   return profile;
 }

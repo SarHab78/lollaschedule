@@ -108,6 +108,12 @@ export async function spotifyGet<T>(path: string, accessToken: string): Promise<
   }
 }
 
+// The current user's stable Spotify ID — used to key durable per-user caches
+// (the access token rotates each login, so it's a bad cache key).
+export async function getMe(accessToken: string): Promise<{ id: string }> {
+  return spotifyGet<{ id: string }>("/me", accessToken);
+}
+
 export type TopArtist = {
   id: string;
   name: string;

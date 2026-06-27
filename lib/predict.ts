@@ -1,9 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
 import crypto from "crypto";
+import { kvGet, kvSet } from "./kv";
 
 // AI taste-fit prediction. Spotify gives us no genre/similarity data, so we use
 // Claude's music knowledge as the discovery engine: given the artists the user
@@ -17,7 +16,7 @@ export type Fit = { fit: number; reason: string };
 const MODEL = "claude-opus-4-8";
 // Bump when the prompt/calibration changes so cached scores auto-invalidate.
 const PROMPT_VERSION = "v2";
-const CACHE_PATH = join(process.cwd(), "data", "predict-cache.json");
+const CACHE_TTL = 60 * 60 * 24 * 30; // 30 days; key also changes when favorites do
 // Score in small parallel batches (one 137-artist call took 23-65s). Keep
 // concurrency modest so we don't trip Anthropic 429/529 overload ourselves.
 const CHUNK = 20;
@@ -36,28 +35,11 @@ const PredictionsSchema = z.object({
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 const clampFit = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
-// cacheKey -> { normalizedArtist -> Fit }. Disk-persisted (warm in dev) + an
-// in-memory mirror for Vercel's read-only FS. Mirrors lib/enrich.ts.
-type CacheShape = Record<string, Record<string, Fit>>;
-const memCache = new Map<string, Record<string, Fit>>();
+// Predictions live in KV (durable, shared across instances), keyed by the hash
+// below as `predict:<key>` -> { normalizedArtist -> Fit }. Falls back to
+// in-memory automatically (lib/kv.ts) when Upstash isn't configured.
 // Share one prediction across concurrent /schedule loads (no thundering herd).
 const inflight = new Map<string, Promise<Record<string, Fit>>>();
-
-function loadDisk(): CacheShape {
-  if (!existsSync(CACHE_PATH)) return {};
-  try {
-    return JSON.parse(readFileSync(CACHE_PATH, "utf8"));
-  } catch {
-    return {};
-  }
-}
-function saveDisk(cache: CacheShape) {
-  try {
-    writeFileSync(CACHE_PATH, JSON.stringify(cache, null, 2));
-  } catch {
-    // read-only FS (prod) — just re-predict next cold start
-  }
-}
 
 // Key on the inputs that change the answer: model + favorites + candidate set.
 // Favorites change ⇒ new key ⇒ stale predictions auto-invalidate.
@@ -93,11 +75,10 @@ export async function predictFits(
 
   const key = keyFor(favorites, candidates);
 
-  // Cache hit (mem or disk): the key encodes the exact candidate set, so trust
-  // it — but ignore an empty entry (a prior failure should never count as a hit).
-  const cached = memCache.get(key) ?? loadDisk()[key];
+  // Cache hit (KV): the key encodes the exact candidate set, so trust it — but
+  // ignore an empty entry (a prior failure should never count as a hit).
+  const cached = await kvGet<Record<string, Fit>>(`predict:${key}`);
   if (cached && Object.keys(cached).length > 0) {
-    memCache.set(key, cached);
     for (const c of candidates) {
       const hit = cached[norm(c)];
       if (hit) out.set(c, hit);
@@ -151,10 +132,7 @@ async function runPrediction(
 
   const ms = Date.now() - started;
   if (failed === 0) {
-    const disk = loadDisk();
-    disk[key] = byNorm;
-    saveDisk(disk);
-    memCache.set(key, byNorm);
+    await kvSet(`predict:${key}`, byNorm, CACHE_TTL);
     console.log(`[predict] scored ${Object.keys(byNorm).length}/${candidates.length} via ${MODEL} (${chunks.length} chunks, ${ms}ms) — cached`);
   } else {
     // Don't cache a partial result — retry the whole set on the next load.
