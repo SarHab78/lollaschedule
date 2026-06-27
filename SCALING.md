@@ -35,12 +35,13 @@ Today caches live in memory per server instance; on Vercel's read-only FS the di
 writes are no-ops → predictions + Spotify fetches re-run on every cold start/instance
 (cost + rate-limit risk). Make them durable + per-user.
 
-- [ ] 👤 ☐ Create **Upstash Redis** account (free tier); put URL/token in
-      `.env.local` + Vercel env.
-- [ ] 🤖 ☐ Move **predict cache** → Redis, keyed by **Spotify user ID** (stable),
-      not the access token (rotates). Replaces `data/predict-cache.json`.
-- [ ] 🤖 ☐ Move **taste-profile cache** → Redis (currently in-memory, 10-min TTL).
-- [ ] 🤖 ☐ Fetch `/me` once to get the **Spotify user ID** for cache keys.
+- [ ] 👤 ◐ Create **Upstash Redis** account (free tier); put
+      `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` in `.env.local` + Vercel.
+      Code is live with an in-memory fallback until these land.
+- [x] 🤖 ☑ **predict cache** → KV (`predict:<favorites-hash>`, 30d TTL). lib/kv.ts.
+- [x] 🤖 ☑ **taste-profile cache** → KV, keyed by stable Spotify user ID + window,
+      24h TTL (Maps/Sets serialized for JSON).
+- [x] 🤖 ☑ `getMe()` for the **Spotify user ID** cache key; page.tsx fetches it.
 - [ ] 🤖 ☐ **Token refresh** — use the stored refresh token so users aren't bounced
       after ~1 hour (we set `spotify_refresh_token` but never use it).
 
