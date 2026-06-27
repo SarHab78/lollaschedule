@@ -35,9 +35,10 @@ Today caches live in memory per server instance; on Vercel's read-only FS the di
 writes are no-ops → predictions + Spotify fetches re-run on every cold start/instance
 (cost + rate-limit risk). Make them durable + per-user.
 
-- [ ] 👤 ◐ Create **Upstash Redis** account (free tier); put
-      `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` in `.env.local` + Vercel.
-      Code is live with an in-memory fallback until these land.
+- [x] 👤 ☑ Create **Upstash Redis** account + add `UPSTASH_REDIS_REST_URL` +
+      `UPSTASH_REDIS_REST_TOKEN` to `.env.local`. **VERIFIED live** (taste +
+      predict keys persisting with correct TTLs). ⚠️ STILL TODO: add the same two
+      vars to **Vercel** env (Production) so the deployed site uses Redis too.
 - [x] 🤖 ☑ **predict cache** → KV (`predict:<favorites-hash>`, 30d TTL). lib/kv.ts.
 - [x] 🤖 ☑ **taste-profile cache** → KV, keyed by stable Spotify user ID + window,
       24h TTL (Maps/Sets serialized for JSON).
