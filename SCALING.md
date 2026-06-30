@@ -8,27 +8,46 @@ can be shared widely ("fully public / could spread"). Check items off as we go.
 
 ---
 
-## The one hard gate
+## The hard reality: Spotify cannot scale past 25 users (researched 2026-06-30)
 The app is in Spotify **Development Mode** → **only 25 manually-allowlisted Spotify
-accounts can ever log in.** Person #26 gets "user not registered." Going past 25
-requires a **Spotify Quota Extension Request** (a review, not a toggle). That review
-takes days–weeks, so it's the **critical path** — file it first; harden the backend
-while it's in the queue. Approval also raises the app-wide rate limit.
+accounts can ever log in.** Going public is **NOT achievable** for this project:
+
+- **Quota Extension is dead for individuals.** As of **May 15, 2025** Spotify only
+  accepts extended-quota applications from **organizations**, and requires a
+  registered business + a **launched service with ≥250k monthly active users**.
+  Catch-22 (can't get 250k while capped at 25). An LLC wouldn't clear the MAU bar.
+- **Every uncapped Spotify shortcut is also blocked** (verified via spikes):
+  - Wrapped "Your Top Songs" playlist → **404** (Spotify-owned; Nov-2024 lockdown).
+  - Liked Songs → **no shareable link exists** at all.
+  - Any public user playlist via Client Credentials → metadata reads but **tracks
+    403 Forbidden** (confirmed on 2 playlists — blanket dev-mode restriction).
+  - Nov-2024 also killed Related Artists, Recommendations, Audio Features, genres.
+
+**Conclusion:** Spotify login stays a perk for the ≤25 allowlisted accounts. To
+reach anyone else we must get taste data WITHOUT the Spotify Web API (Phase 0 ↓).
+`SPOTIFY_CLIENT_SECRET` is in `.env.local` from the spike but is now unused.
 
 ---
 
-## Phase 0 — Unblock the long pole (start immediately)
-Mostly process; the privacy policy is the thing that lets the quota request be filed.
+## Phase 0 — Reach beyond 25 without the Spotify API
+Uncapped taste sources (the pipeline — scoring/AI-fit/optimizer — is source-agnostic):
 
-- [ ] 🤖 ☐ Write **privacy policy** page (`/privacy`) — what data we read (top
-      artists/tracks, recent, saved, follows), that we don't sell it, retention,
-      contact. Required to file the quota request AND legally.
-- [ ] 🤖 ☐ Write **terms of service** page (`/terms`).
-- [ ] 👤 ☐ Add **app branding** in Spotify dashboard: name, logo, description of
-      exactly what we do with the data.
-- [ ] 👤 ☐ File the **Spotify Quota Extension Request** (links privacy policy).
-- [ ] 👤 ☐ Set an **Anthropic spending cap** in the console (viral-spike guard).
-- [ ] 👤 ☐ Decide **app name + logo** for the submission.
+- [ ] 🤖 ☐ **Manual artist entry** — user types ~15 favorite artists. Uncapped,
+      instant, anyone. Shallow signal but the AI predictor works great from names.
+- [ ] 🤖 ☐ **Last.fm username** — `user.getTopArtists`/`getTopTracks`/`getLovedTracks`
+      need only an API key + username (public, no OAuth, NO cap). Great for existing
+      scrobblers; empty for new accounts (scrobbling is forward-only). Needs a free
+      Last.fm API key (👤, instant — no review).
+- [ ] 🤖 ☐ (later) **Spotify data-export upload** — user downloads their Streaming
+      History JSON from Spotify privacy settings + uploads it. Full real history,
+      uncapped, but multi-day wait → power-user option only.
+- [ ] 🤖 ☐ Refactor taste into a **source-agnostic provider** (Spotify / Last.fm /
+      manual all produce the same affinity map).
+
+## Deferred (was Phase 0 — now moot)
+Privacy/terms pages + Spotify quota request + app branding were for the quota
+extension, which is unreachable. Keep a light privacy note for the Last.fm/manual
+flows, but the formal Spotify submission is off the table.
 
 ## Phase 1 — Durability (core engineering)
 Today caches live in memory per server instance; on Vercel's read-only FS the disk
