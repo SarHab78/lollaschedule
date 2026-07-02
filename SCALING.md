@@ -29,20 +29,22 @@ reach anyone else we must get taste data WITHOUT the Spotify Web API (Phase 0 �
 
 ---
 
-## Phase 0 — Reach beyond 25 without the Spotify API
-Uncapped taste sources (the pipeline — scoring/AI-fit/optimizer — is source-agnostic):
+## Phase 0 — Reach beyond 25 without the Spotify API  ✅ DONE
+**Decision (2026-07-01): the reach strategy is just two paths —**
+1. **Spotify login** — the ≤25 allowlisted accounts get the premium auto experience.
+2. **Manual entry (`/pick`)** — everyone else. Tap lineup artists from a photo grid
+   (+ optional off-lineup free-text). Uncapped, no login, ~1 min. The AI predictor
+   makes it strong (its discovery fits ≈ Spotify's; ~44% of the schedule comes free
+   from AI at zero taps). Copy nudges tapping generously.
 
-- [ ] 🤖 ☐ **Manual artist entry** — user types ~15 favorite artists. Uncapped,
-      instant, anyone. Shallow signal but the AI predictor works great from names.
-- [ ] 🤖 ☐ **Last.fm username** — `user.getTopArtists`/`getTopTracks`/`getLovedTracks`
-      need only an API key + username (public, no OAuth, NO cap). Great for existing
-      scrobblers; empty for new accounts (scrobbling is forward-only). Needs a free
-      Last.fm API key (👤, instant — no review).
-- [ ] 🤖 ☐ (later) **Spotify data-export upload** — user downloads their Streaming
-      History JSON from Spotify privacy settings + uploads it. Full real history,
-      uncapped, but multi-day wait → power-user option only.
-- [ ] 🤖 ☐ Refactor taste into a **source-agnostic provider** (Spotify / Last.fm /
-      manual all produce the same affinity map).
+- [x] 🤖 ☑ **Manual artist entry** — shipped (`/pick`, `buildManualProfile`).
+- [x] 🤖 ☑ Source-agnostic taste (Spotify or manual → same affinity map → same
+      scoring/AI/optimizer).
+
+**Dropped — too much friction for users (decided 2026-07-01):**
+- ~~Last.fm username~~ — requires having/creating a scrobbling account; new accounts
+  are empty (forward-only). Not worth the conversion hit.
+- ~~Spotify data-export upload~~ — multi-day wait + file upload. Dead on arrival.
 
 ## Deferred (was Phase 0 — now moot)
 Privacy/terms pages + Spotify quota request + app branding were for the quota
