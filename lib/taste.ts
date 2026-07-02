@@ -28,6 +28,27 @@ export function normalizeName(name: string): string {
   return name.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
+// Source-agnostic profile for the manual (no-Spotify) flow: the user hand-picks
+// the artists they love. Each becomes a top-tier favorite (affinity 1.0 →
+// must-see); the AI predictor extrapolates the rest of the lineup from these.
+// No KV/Spotify — purely the provided names.
+export function buildManualProfile(loved: string[]): TasteProfile {
+  const affinity = new Map<string, number>();
+  const sources = new Map<string, Set<string>>();
+  for (const name of loved) {
+    const key = normalizeName(name);
+    if (!key) continue;
+    affinity.set(key, 1);
+    sources.set(key, new Set(["picked"]));
+  }
+  return {
+    affinityByName: affinity,
+    emphasisByName: new Map(),
+    genreWeights: new Map(),
+    sourcesByName: sources,
+  };
+}
+
 // Spotify exposes three fixed listening windows (no arbitrary ranges).
 export type TimeWindow = "short_term" | "medium_term" | "long_term";
 

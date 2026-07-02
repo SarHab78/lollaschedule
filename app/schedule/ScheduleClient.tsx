@@ -123,10 +123,12 @@ export default function ScheduleClient({
   days,
   stageOrder,
   options,
+  manualMode = false,
 }: {
   days: DayData[];
   stageOrder: string[];
   options: TasteOptions;
+  manualMode?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -247,20 +249,22 @@ export default function ScheduleClient({
         how much you&apos;d enjoy the day, minus walking time between stages.
       </p>
 
-      {/* ---- Taste settings ---- */}
-      <details className="no-print" style={panel} open>
-        <summary style={summary}>⚙️ Taste settings {pending && <span style={{ color: "#4ad6ff" }}>· updating…</span>}</summary>
-        <div style={{ marginTop: "0.75rem" }}>
-          <div style={{ fontSize: "0.82rem", color: "#8a8a94", marginBottom: 6 }}>Listening window:</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {(Object.keys(WINDOW_LABEL) as TimeWindow[]).map((w) => (
-              <button key={w} onClick={() => applyWindow(w)} style={chip(options.window === w)}>
-                {WINDOW_LABEL[w]}
-              </button>
-            ))}
+      {/* ---- Taste settings (Spotify only — no listening windows in manual mode) ---- */}
+      {!manualMode && (
+        <details className="no-print" style={panel} open>
+          <summary style={summary}>⚙️ Taste settings {pending && <span style={{ color: "#4ad6ff" }}>· updating…</span>}</summary>
+          <div style={{ marginTop: "0.75rem" }}>
+            <div style={{ fontSize: "0.82rem", color: "#8a8a94", marginBottom: 6 }}>Listening window:</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {(Object.keys(WINDOW_LABEL) as TimeWindow[]).map((w) => (
+                <button key={w} onClick={() => applyWindow(w)} style={chip(options.window === w)}>
+                  {WINDOW_LABEL[w]}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </details>
+        </details>
+      )}
 
       {/* ---- Friends ---- */}
       <details className="no-print" style={panel}>
@@ -458,7 +462,9 @@ export default function ScheduleClient({
         })}
       </div>
 
-      <a className="btn no-print" href="/dashboard" style={{ background: "#26262f", marginTop: "1.5rem" }}>← Back to your artists</a>
+      <a className="btn no-print" href={manualMode ? "/pick" : "/dashboard"} style={{ background: "#26262f", marginTop: "1.5rem" }}>
+        ← {manualMode ? "Edit your picks" : "Back to your artists"}
+      </a>
     </main>
   );
 }

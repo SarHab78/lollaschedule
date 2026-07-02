@@ -33,6 +33,15 @@ function saveCache(cache: Record<string, ArtistMeta>) {
   }
 }
 
+// Read-only cache lookup (no Spotify token / network) — for the manual flow,
+// which has no auth. The lineup's 172 artists are all pre-cached with images.
+export function cachedArtists(names: string[]): Map<string, ArtistMeta> {
+  const cache = loadCache();
+  const out = new Map<string, ArtistMeta>();
+  for (const name of names) if (cache[name]) out.set(name, cache[name]);
+  return out;
+}
+
 // Resolve metadata for many artist names:
 //  1. search (cache miss only) to get the Spotify id + image,
 //  2. batch /artists?ids= to get genres + popularity — the SEARCH endpoint no

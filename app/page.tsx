@@ -28,9 +28,17 @@ export default async function Home({ searchParams }: Props) {
         </div>
       ) : null}
 
-      <a className="btn" href="/login">
-        Connect Spotify
-      </a>
+      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+        <a className="btn" href="/login">
+          Connect Spotify
+        </a>
+        <a className="btn" href="/pick" style={{ background: "#26262f" }}>
+          Pick your artists (no login)
+        </a>
+      </div>
+      <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
+        No Spotify? Just tap the lineup artists you love — takes under a minute.
+      </p>
     </main>
   );
 }
