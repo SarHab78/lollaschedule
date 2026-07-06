@@ -124,11 +124,13 @@ export default function ScheduleClient({
   stageOrder,
   options,
   manualMode = false,
+  aiUnavailable = false,
 }: {
   days: DayData[];
   stageOrder: string[];
   options: TasteOptions;
   manualMode?: boolean;
+  aiUnavailable?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -241,6 +243,10 @@ export default function ScheduleClient({
   // For the active day, which friends are on each set, and your overlaps.
   const friendsOnSet = (id: string) => friends.map((f, i) => (f.ids.includes(id) ? i : -1)).filter((i) => i >= 0);
 
+  // When the AI is unavailable, discovery fits are all 0 — show "—" not "0 fit".
+  const fitLabel = (s: UISet) =>
+    s.tier === "discovery" ? (aiUnavailable ? "—" : `${s.fit} fit`) : String(s.score);
+
   return (
     <main style={{ maxWidth: 1100 }}>
       <h1>Your Lolla 2026 schedule</h1>
@@ -248,6 +254,14 @@ export default function ScheduleClient({
         Each column is a stage; time runs top to bottom. We picked the sets that maximize
         how much you&apos;d enjoy the day, minus walking time between stages.
       </p>
+
+      {aiUnavailable && (
+        <div className="no-print" style={{ background: "#2a2416", border: "1px solid #5c4a21", color: "#ffd35c", padding: "0.75rem 1rem", borderRadius: 8, marginBottom: "1.5rem", fontSize: "0.9rem" }}>
+          ⚠️ <strong>Discovery recommendations are temporarily unavailable</strong> — the AI service was
+          briefly overloaded, so 🔮 discovery picks aren&apos;t ranked right now. Your schedule below is still
+          built from {manualMode ? "your picks" : "your listening"}. <strong>Refresh in a moment</strong> to load recommendations.
+        </div>
+      )}
 
       {/* ---- Taste settings (Spotify only — no listening windows in manual mode) ---- */}
       {!manualMode && (
@@ -323,7 +337,7 @@ export default function ScheduleClient({
                 <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "0.4rem 0", borderTop: "1px solid #26262f", fontSize: "0.85rem", flexWrap: "wrap" }}>
                   <span style={{ width: 10, height: 10, borderRadius: 3, background: TIER_COLOR[s.tier], flexShrink: 0 }} />
                   <span style={{ fontWeight: 600 }}>{s.artist}</span>
-                  <span style={{ color: "#8a8a94" }}>{day} {fmt(s.start)} · {s.stage} · {s.tier === "discovery" ? `${s.fit} fit` : s.score}</span>
+                  <span style={{ color: "#8a8a94" }}>{day} {fmt(s.start)} · {s.stage} · {fitLabel(s)}</span>
                   {conflict && <span style={{ color: "#6a6a74" }}>— clashes with {conflict.artist}</span>}
                   <button className="btn" style={{ marginLeft: "auto", padding: "0.3rem 0.85rem", fontSize: "0.8rem", background: lockSet.has(s.id) ? "#1db954" : "#26262f" }} onClick={() => toggleLock(s.id)}>
                     {lockSet.has(s.id) ? "🔒 Locked" : "Lock in"}
@@ -408,7 +422,7 @@ export default function ScheduleClient({
                     <button
                       key={s.id}
                       onClick={() => toggleLock(s.id)}
-                      title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${s.tier === "discovery" ? `${s.fit} fit` : s.score}) — ${s.reason}\nClick to lock`}
+                      title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${fitLabel(s)}) — ${s.reason}\nClick to lock`}
                       style={{
                         position: "absolute", top, height, textAlign: "left", overflow: "hidden",
                         left: `calc(${laneIdx * widthPct}% + 2px)`, width: `calc(${widthPct}% - 4px)`,
@@ -427,7 +441,7 @@ export default function ScheduleClient({
                       }}
                     >
                       {isLocked ? "🔒 " : ""}{s.artist}
-                      <span style={{ display: "block", fontWeight: 400, fontSize: "0.66rem", opacity: 0.85 }}>{fmt(s.start)} · {s.tier === "discovery" ? `${s.fit} fit` : s.score}</span>
+                      <span style={{ display: "block", fontWeight: 400, fontSize: "0.66rem", opacity: 0.85 }}>{fmt(s.start)} · {fitLabel(s)}</span>
                       {fos.length > 0 && (
                         <span style={{ position: "absolute", top: 3, right: 3, display: "flex", gap: 2 }}>
                           {fos.map((fi) => (

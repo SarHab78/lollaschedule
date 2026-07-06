@@ -88,7 +88,11 @@ export default async function Schedule({ searchParams }: Props) {
   const candidates = artists.filter((a) => !isDirect(a));
   console.log(`[predict] favorites fed to AI (${favorites.length}):`, favorites.join(", "));
   console.log(`[predict] candidates to score: ${candidates.length}`);
-  const fits = await predictFits(favorites, candidates).catch(() => new Map());
+  const prediction = await predictFits(favorites, candidates).catch(
+    () => ({ fits: new Map(), status: "unavailable" as const }),
+  );
+  const fits = prediction.fits;
+  const aiUnavailable = prediction.status === "unavailable";
 
   // Score each artist once, then attach to every set they play.
   const scoredArtist = new Map<string, ReturnType<typeof scoreArtist>>();
@@ -136,5 +140,5 @@ export default async function Schedule({ searchParams }: Props) {
   const pos = stageDistances.walkMinutesFromNorth as Record<string, number>;
   const stageOrder = [...lineup.stages].sort((a, b) => (pos[a] ?? 0) - (pos[b] ?? 0));
 
-  return <ScheduleClient days={days} stageOrder={stageOrder} options={options} manualMode={manualMode} />;
+  return <ScheduleClient days={days} stageOrder={stageOrder} options={options} manualMode={manualMode} aiUnavailable={aiUnavailable} />;
 }

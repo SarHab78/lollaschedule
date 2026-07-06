@@ -92,11 +92,16 @@ export default function PickClient({ artists }: { artists: PickArtist[] }) {
                 style={{
                   width: "100%", aspectRatio: "1", borderRadius: 8, overflow: "hidden",
                   background: "#26262f", marginBottom: 6,
+                  display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
-                {a.image && (
+                {a.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={a.image} alt={a.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <span style={{ color: "#8a8a94", fontWeight: 700, fontSize: "1.4rem", letterSpacing: 1 }}>
+                    {a.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+                  </span>
                 )}
               </div>
               <div style={{ fontSize: "0.72rem", fontWeight: 600, color: on ? "#1db954" : "#d8d8de", lineHeight: 1.15 }}>

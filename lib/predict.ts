@@ -63,15 +63,22 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
   return out;
 }
 
+// status lets the UI tell "the AI ran and these are the scores" apart from "the
+// AI never answered" (e.g. an overload) — so we can show a clear banner instead
+// of a schedule full of misleading 0-fit discoveries.
+//   ok          — fits are populated (fresh or cached)
+//   unavailable — we tried but got nothing back (API overloaded/erroring); retry
+//   disabled    — no ANTHROPIC_API_KEY configured (feature off, not an error)
+export type PredictResult = { fits: Map<string, Fit>; status: "ok" | "unavailable" | "disabled" };
+
 // Score each candidate lineup artist for taste-fit against the user's favorites.
-// Returns Map keyed by the ORIGINAL candidate string. Empty map = no key set or
-// the call failed; callers treat a missing fit as 0 (graceful degradation).
+// Fits are keyed by the ORIGINAL candidate string; a missing fit is treated as 0.
 export async function predictFits(
   favorites: string[],
   candidates: string[],
-): Promise<Map<string, Fit>> {
+): Promise<PredictResult> {
   const out = new Map<string, Fit>();
-  if (candidates.length === 0) return out;
+  if (candidates.length === 0) return { fits: out, status: "ok" };
 
   const key = keyFor(favorites, candidates);
 
@@ -84,12 +91,12 @@ export async function predictFits(
       if (hit) out.set(c, hit);
     }
     console.log(`[predict] cache hit — ${out.size}/${candidates.length}, 0 API calls`);
-    return out;
+    return { fits: out, status: "ok" };
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     console.log("[predict] no ANTHROPIC_API_KEY — discoveries left unscored (graceful)");
-    return new Map();
+    return { fits: out, status: "disabled" };
   }
 
   // Dedup concurrent loads of the same key onto a single in-flight prediction.
@@ -107,7 +114,9 @@ export async function predictFits(
     const hit = byNorm[norm(c)];
     if (hit) out.set(c, hit);
   }
-  return out;
+  // Nothing came back at all → the call failed (overload/error), not "0 fit".
+  const status = out.size === 0 ? "unavailable" : "ok";
+  return { fits: out, status };
 }
 
 async function runPrediction(
