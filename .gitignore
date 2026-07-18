@@ -16,6 +16,9 @@
 # enriched-cache.json which is global artist images and is committed)
 data/predict-cache.json
 
+# Claude Code local worktrees / job state — never commit
+.claude/worktrees/
+
 # misc
 .DS_Store
 *.pem
