@@ -22,7 +22,9 @@ export type UISet = {
 };
 
 export type DayData = { date: string; label: string; sets: UISet[] };
-type Friend = { name: string; ids: string[] };
+// color/enabled are optional so friends saved before this change still load:
+// color backfills from the palette by position, enabled defaults to visible.
+type Friend = { name: string; ids: string[]; color?: string; enabled?: boolean };
 
 // Kept local (not imported from taste.ts) so the Node-only deps in that module
 // don't get pulled into the client bundle.
@@ -30,7 +32,9 @@ const WINDOW_LABEL: Partial<Record<TimeWindow, string>> = {
   medium_term: "Last 6 months",
   long_term: "All time",
 };
-const FRIEND_COLORS = ["#ff8a5c", "#ffd35c", "#5cffd3", "#c98aff"];
+// Distinct dot colors, assigned per friend at add-time (stored on the friend)
+// so a given friend keeps their color even as others are added/removed.
+const FRIEND_COLORS = ["#ff8a5c", "#ffd35c", "#5cffd3", "#c98aff", "#5cb8ff", "#ff5c9d", "#9dff5c", "#ff5c5c"];
 
 const TIER_COLOR: Record<Tier, string> = {
   "must-see": "#1db954", // green — artists you picked
@@ -140,6 +144,7 @@ export default function ScheduleClient({
   const [friends, setFriends] = usePersisted<Friend[]>("lolla_friends", []);
   const [friendName, setFriendName] = useState("");
   const [friendLink, setFriendLink] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const lockSet = useMemo(() => new Set(locks), [locks]);
 
@@ -213,13 +218,19 @@ export default function ScheduleClient({
     const link = `${location.origin}/share?s=${encodeSets(allChosenSets.map((s) => s.id))}`;
     try {
       await navigator.clipboard.writeText(link);
-      alert("Share link copied! Send it to a friend — they can paste it below to compare.");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // one tap → inline "Copied!", no dialog to dismiss
     } catch {
       prompt("Copy your share link:", link);
     }
   };
 
   // ---- friends ----
+  // Each friend's dot color, stable for the life of the friend (stored on add;
+  // backfilled by position for friends saved before colors were persisted).
+  const friendColor = (f: Friend, i: number) => f.color ?? FRIEND_COLORS[i % FRIEND_COLORS.length];
+  const isFriendOn = (f: Friend) => f.enabled !== false; // undefined (legacy) = visible
+
   const addFriend = () => {
     const ids = parseSharePayload(friendLink).filter((x) => validIds.has(x));
     if (ids.length === 0) {
@@ -227,14 +238,21 @@ export default function ScheduleClient({
       return;
     }
     const name = friendName.trim() || `Friend ${friends.length + 1}`;
-    setFriends((p) => [...p, { name, ids }]);
+    // Prefer a palette color no current friend is using, so new links get a
+    // visibly different dot; fall back to cycling once the palette is exhausted.
+    const used = new Set(friends.map((f, i) => friendColor(f, i)));
+    const color = FRIEND_COLORS.find((c) => !used.has(c)) ?? FRIEND_COLORS[friends.length % FRIEND_COLORS.length];
+    setFriends((p) => [...p, { name, ids, color, enabled: true }]);
     setFriendName("");
     setFriendLink("");
   };
   const removeFriend = (idx: number) => setFriends((p) => p.filter((_, i) => i !== idx));
+  const toggleFriend = (idx: number) =>
+    setFriends((p) => p.map((f, i) => (i === idx ? { ...f, enabled: !isFriendOn(f) } : f)));
 
-  // For the active day, which friends are on each set, and your overlaps.
-  const friendsOnSet = (id: string) => friends.map((f, i) => (f.ids.includes(id) ? i : -1)).filter((i) => i >= 0);
+  // For the active day, which friends are on each set (only ones toggled on).
+  const friendsOnSet = (id: string) =>
+    friends.map((f, i) => (isFriendOn(f) && f.ids.includes(id) ? i : -1)).filter((i) => i >= 0);
 
   // When the AI is unavailable, discovery fits are all 0 — show "—" not "0 fit".
   const fitLabel = (s: UISet) =>
@@ -278,35 +296,53 @@ export default function ScheduleClient({
         <summary style={summary}>👯 Compare with friends {friends.length > 0 && <span style={{ color: "#4ad6ff" }}>· {friends.length}</span>}</summary>
         <div style={{ marginTop: "0.75rem" }}>
           <p style={{ fontSize: "0.82rem", color: "#8a8a94", margin: "0 0 0.6rem" }}>
-            Ask a friend to hit <strong>Copy share link</strong> and send it to you. Paste it here to
-            see where your schedules overlap.
+            Ask a friend to hit <strong>Copy share link</strong> and send it to you. Paste it here and
+            they&apos;re saved — each gets their own dot color on the timeline, and you can show or hide
+            any friend&apos;s sets anytime.
           </p>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: "0.75rem" }}>
             <input value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Friend's name" style={{ ...input, maxWidth: 160 }} />
             <input value={friendLink} onChange={(e) => setFriendLink(e.target.value)} placeholder="Paste their share link" style={{ ...input, flex: 1, minWidth: 220 }} />
             <button className="btn" onClick={addFriend}>Add</button>
           </div>
-          {friends.map((f, i) => {
-            const overlap = f.ids.filter((id) => yourChosenIds.has(id));
+          {(() => {
             const byId = new Map(days.flatMap((d) => d.sets).map((s) => [s.id, s]));
-            return (
-              <div key={i} style={{ borderTop: "1px solid #26262f", padding: "0.6rem 0" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 12, height: 12, borderRadius: 3, background: FRIEND_COLORS[i % FRIEND_COLORS.length] }} />
-                  <strong>{f.name}</strong>
-                  <span style={{ color: "#8a8a94", fontSize: "0.82rem" }}>
-                    {overlap.length} set{overlap.length === 1 ? "" : "s"} together · {f.ids.length} total
-                  </span>
-                  <button onClick={() => removeFriend(i)} style={{ marginLeft: "auto", background: "none", border: "none", color: "#6a6a74", cursor: "pointer" }}>remove</button>
-                </div>
-                {overlap.length > 0 && (
-                  <div style={{ fontSize: "0.8rem", color: "#b8b8c0", marginTop: 4, paddingLeft: 20 }}>
-                    👯 Plan together: {overlap.map((id) => byId.get(id)?.artist).filter(Boolean).join(", ")}
+            return friends.map((f, i) => {
+              const overlap = f.ids.filter((id) => yourChosenIds.has(id));
+              const on = isFriendOn(f);
+              const dot = friendColor(f, i);
+              return (
+                <div key={i} style={{ borderTop: "1px solid #26262f", padding: "0.6rem 0", opacity: on ? 1 : 0.55 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: 3, background: dot }} />
+                    <strong>{f.name}</strong>
+                    <span style={{ color: "#8a8a94", fontSize: "0.82rem" }}>
+                      {overlap.length} set{overlap.length === 1 ? "" : "s"} together · {f.ids.length} total
+                    </span>
+                    <button
+                      onClick={() => toggleFriend(i)}
+                      title={on ? "Hide their sets on the timeline" : "Show their sets on the timeline"}
+                      style={{
+                        marginLeft: "auto", cursor: "pointer", borderRadius: 999,
+                        padding: "0.15rem 0.65rem", fontSize: "0.75rem",
+                        border: `1px solid ${on ? dot : "#3a3a44"}`,
+                        background: on ? "#1a2a1e" : "transparent",
+                        color: on ? "#cfeede" : "#8a8a94",
+                      }}
+                    >
+                      {on ? "👁 Shown" : "Hidden"}
+                    </button>
+                    <button onClick={() => removeFriend(i)} style={{ background: "none", border: "none", color: "#6a6a74", cursor: "pointer" }}>remove</button>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  {overlap.length > 0 && (
+                    <div style={{ fontSize: "0.8rem", color: "#b8b8c0", marginTop: 4, paddingLeft: 20 }}>
+                      👯 Plan together: {overlap.map((id) => byId.get(id)?.artist).filter(Boolean).join(", ")}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
         </div>
       </details>
 
@@ -360,7 +396,7 @@ export default function ScheduleClient({
       {/* Export + day tabs */}
       <div className="no-print" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
         <button className="btn" onClick={downloadIcs}>📅 Download .ics</button>
-        <button className="btn" style={{ background: "#26262f" }} onClick={copyShare}>🔗 Copy share link</button>
+        <button className="btn" style={{ background: copied ? "#1db954" : "#26262f", color: copied ? "#06210f" : undefined }} onClick={copyShare}>{copied ? "✓ Copied!" : "🔗 Copy share link"}</button>
         <button className="btn" style={{ background: "#26262f" }} onClick={() => window.print()}>🖨️ Print</button>
         {locks.length > 0 && (
           <button className="btn" style={{ background: "#3a2030" }} onClick={() => setLocks([])}>✕ Clear {locks.length} lock{locks.length > 1 ? "s" : ""}</button>
@@ -437,7 +473,7 @@ export default function ScheduleClient({
                       {fos.length > 0 && (
                         <span style={{ position: "absolute", top: 3, right: 3, display: "flex", gap: 2 }}>
                           {fos.map((fi) => (
-                            <span key={fi} title={friends[fi].name} style={{ width: 7, height: 7, borderRadius: "50%", background: FRIEND_COLORS[fi % FRIEND_COLORS.length] }} />
+                            <span key={fi} title={friends[fi].name} style={{ width: 7, height: 7, borderRadius: "50%", background: friendColor(friends[fi], fi) }} />
                           ))}
                         </span>
                       )}
