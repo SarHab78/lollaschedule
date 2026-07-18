@@ -136,6 +136,33 @@ traced via the WATCH probe: she was a liked song sitting **past #500** in the
 library (cap was too shallow) AND saved songs were under-weighted. Fix: raised
 saved cap (→5000) + floored saved/follow at worth-it. She now scores worth-it.
 
+## Status (as of 2026-07-17) — artist-photo audit
+Audited **all 172** lineup photos in `data/enriched-cache.json` for wrong-artist
+mismatches (user flagged the wrong "Adela"). Method (see the
+`artist-photo-verification` memory for the full playbook): every cached Deezer
+image URL embeds a 32-hex `<hash>` → reverse-mapped it via
+`api.deezer.com/search/artist` to the exact Deezer artist the photo depicts, then
+confirmed identity by **top-track matching** (`/artist/<id>/top`), NOT fan count —
+fan-count "most popular match" is what caused the original errors. Ran 12 parallel
+research agents.
+- **147 already correct.** **18 photos corrected** (all validated HTTP 200, no dupes,
+  no blank-defaults). Genuinely-wrong-person fixes incl. ADELA→ADÉLA (Adéla
+  Jergová), LEON THOMAS→Leon Thomas III (was the late jazz vocalist d.1999),
+  YOASOBI (mismatched), THE ARMY, THE NAVY (no-comma imposter), SUNSHINE→Sunshine
+  Benzi, RYMAN, GOLDIE BOUTILIER, BELLA KAY, 54 ULTRA, AVELLO, WHITNEY WHITNEY,
+  CALDER ALLEN, DESTIN CONRAD, SURFING FOR DAISY. No-photo fills: ROZ→RØZ, NEXT OF
+  KIN, PARTYOF2, CRUZ BECKHAM AND THE BREAKERS.
+- **BENO** verified CORRECT (cached profile is @thisbeno — songs match), left as-is.
+- Corrected entries now also carry a `deezerId` field for auditability.
+- Committed + pushed to `main` (deployed via Vercel).
+- **OPEN ITEM — WORSHIP:** blanked to initials because it's the drum & bass
+  collective (Dimension/Sub Focus/1991/Culture Shock) with **no Deezer page**; the
+  old photo was an unrelated synthwave producer. Needs a **manually-supplied press
+  photo URL** — nothing to auto-fetch.
+- Legit no-photo acts (render as initials, not misleading): CHICAGO MADE (multi-act
+  showcase), IVRI (real Deezer entry has a blank picture), DJ TRIXIE MATTEL, INK,
+  CHICAGO YOUTH SYMPHONY ORCHESTRA.
+
 ## Next steps (roughly in order)
 1. **AI PREDICTOR (the headline next task)** — build `lib/predict.ts` using
    `@anthropic-ai/sdk`, model **`claude-opus-4-8`**, structured JSON output
@@ -160,3 +187,6 @@ saved cap (→5000) + floored saved/follow at worth-it. She now scores worth-it.
   its stdout (currently launched from within a Claude session — restart in a
   user-owned terminal with `npm run dev` if you need to watch logs live).
 - User must stay reconnected for `user-follow-read` (followed=84 confirmed live).
+- **WORSHIP still has no image** (see 2026-07-17 status) — waiting on a manual
+  press-photo URL from the user; drop it into `data/enriched-cache.json` under the
+  `WORSHIP` key (`image` + `imageSource`) when supplied.
