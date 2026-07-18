@@ -24,8 +24,8 @@ export default async function Home({ searchParams }: Props) {
       <h1>LollaSchedule 🎸</h1>
       <p className="subtitle">
         Tell us which artists you&apos;re excited to see and we&apos;ll build your best
-        Lollapalooza 2026 schedule, highlighting some new artists you might love but
-        haven&apos;t heard yet.
+        Lollapalooza 2026 schedule. It&apos;ll also highlight some new artists you might love
+        but haven&apos;t heard yet.
       </p>
 
       {error ? (
