@@ -68,14 +68,14 @@ export default function PickClient({
       <h1>Pick your artists 🎸</h1>
       {returning ? (
         <p className="subtitle">
-          Welcome back — your picks are saved and loaded below. Tweak them if you like, or just hit{" "}
-          <strong>Build my schedule</strong> again. Adding more artists only sharpens it.
+          Welcome back — your picks are saved and loaded below. Change them if you like, or just hit{" "}
+          <strong>Build my schedule</strong> again. The more you add, the better it gets.
         </p>
       ) : (
         <p className="subtitle">
           Tap <strong>every</strong> artist you recognize and like — the more you pick, the better
-          your schedule matches your real taste, so don&apos;t hold back. We&apos;ll build your Lolla
-          2026 schedule and surface others on the lineup you&apos;d dig. No login, about a minute.
+          your schedule matches your taste. We&apos;ll build your Lolla 2026 schedule and point out
+          other acts on the lineup you&apos;d probably like too. No login, about a minute.
         </p>
       )}
 
@@ -178,7 +178,7 @@ export default function PickClient({
             ? "Tap the artists you love"
             : total < 20
               ? `${total} tapped — keep going, add everyone you recognize`
-              : `${total} tapped — nice, that's a rich picture 🎯`}
+              : `${total} tapped — nice, that's plenty to go on 🎯`}
         </span>
         <button className="btn" onClick={build} disabled={total === 0 || submitting} style={{ opacity: total === 0 ? 0.5 : 1 }}>
           {submitting ? "Building…" : `Build my schedule${total ? ` (${total})` : ""}`}

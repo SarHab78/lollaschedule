@@ -23,9 +23,9 @@ export default async function Home({ searchParams }: Props) {
     <main>
       <h1>LollaSchedule 🎸</h1>
       <p className="subtitle">
-        Tell us which artists you love and we&apos;ll build your optimal Lollapalooza 2026
-        schedule (Grant Park · July 30 – Aug 2) — resolving stage conflicts and surfacing
-        artists you&apos;d love but haven&apos;t found yet.
+        Tell us which artists you love and we&apos;ll build your best Lollapalooza 2026
+        schedule (Grant Park · July 30 – Aug 2) — sorting out stage clashes and pointing you
+        to acts you&apos;d love but haven&apos;t heard yet.
       </p>
 
       {error ? (
