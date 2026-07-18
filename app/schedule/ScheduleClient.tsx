@@ -389,13 +389,14 @@ export default function ScheduleClient({
                       style={{
                         marginLeft: "auto", flexShrink: 0, cursor: "pointer",
                         width: 40, height: 22, padding: 0, borderRadius: 999, border: "none",
-                        position: "relative", background: on ? dot : "#3a3a44",
+                        boxSizing: "border-box", position: "relative", background: on ? dot : "#3a3a44",
                         transition: "background 0.15s ease",
                       }}
                     >
                       <span
                         style={{
-                          position: "absolute", top: 2, left: on ? 20 : 2,
+                          position: "absolute", top: "50%", left: on ? 20 : 2,
+                          transform: "translateY(-50%)",
                           width: 18, height: 18, borderRadius: "50%", background: "#fff",
                           boxShadow: "0 1px 2px rgba(0,0,0,0.4)", transition: "left 0.15s ease",
                         }}
