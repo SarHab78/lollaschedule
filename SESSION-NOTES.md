@@ -1,5 +1,35 @@
 # Session notes — 2026-07-17
 
+**Security hardening pass.** Audited every page/route/flow and fixed the live
+issues (all in this commit):
+- **Email-bomb / sender-reputation / Gmail-quota DoS** (top issue): `/api/auth/request`
+  sends real mail and had only a per-*email* throttle → an attacker could cycle
+  addresses to bomb inboxes or burn the ~500/day Gmail cap (DoS on sign-in for
+  everyone). Added a per-**IP** cap (8/10min) + CSRF origin check. `lib/security.ts`.
+- **CSRF**: all state-changing POSTs (`/api/auth/{request,verify,signout}`,
+  `/pick/save`) now reject cross-origin requests (`sameOrigin()`), on top of the
+  existing SameSite=Lax cookies.
+- **Unbounded KV writes** at `/pick/save`: array count was capped (300) but each
+  string wasn't → multi-MB writes possible. Now per-string cap (120 chars) +
+  dedup + per-IP save cap (40/10min) so bots can't mint unlimited 1-yr keys.
+- **Session token**: now enforces the signed `iat` max-age server-side (a token
+  copied out of the cookie jar no longer lives forever), and refuses to
+  verify/sign against an empty/short `AUTH_SECRET` (fail closed, not forgeable).
+- **Brute-force**: per-IP cap (30/10min) on `/api/auth/verify` on top of the
+  per-code 5-attempt limit.
+- **Security headers** (`next.config.js`): X-Frame-Options DENY, nosniff,
+  Referrer-Policy, Permissions-Policy always; CSP + HSTS in production only (dev
+  HMR unaffected).
+- Verified live in dev: cross-origin POSTs → 403, same-origin → 200, oversized
+  strings truncated+deduped in KV, rate limit trips to 429, all pages render.
+- **Known / NOT fixed (low priority):** the hidden Spotify OAuth flow lacks a
+  `state` param (login-CSRF) — left as-is since it's unreachable/unused; `npm
+  audit` flags a moderate `postcss` advisory that's a build-time transitive dep
+  of Next (only affects processing untrusted CSS — we don't). Rate limits
+  fail-open on a KV error by design (a Redis blip shouldn't lock out sign-in).
+
+---
+
 **Spotify flow hidden.** The landing (`app/page.tsx`) no longer links to the
 Spotify connect flow — dev mode caps it at 25 allowlisted accounts, so no real
 user could use it. Entry points are now (1) **manual picks** (anonymous,

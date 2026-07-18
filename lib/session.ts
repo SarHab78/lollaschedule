@@ -8,7 +8,13 @@ import { cookies } from "next/headers";
 export const SESSION_COOKIE = "session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
-const secret = () => process.env.AUTH_SECRET || "";
+// Require a real secret (≥16 chars). An empty/short AUTH_SECRET would let anyone
+// forge a session token (they'd know the HMAC key), so we treat it as "no auth
+// configured" and fail closed rather than sign/verify with a guessable key.
+const secret = () => {
+  const s = process.env.AUTH_SECRET || "";
+  return s.length >= 16 ? s : "";
+};
 
 function sign(payloadB64: string): string {
   return crypto.createHmac("sha256", secret()).update(payloadB64).digest("base64url");
@@ -30,6 +36,11 @@ export function readSessionToken(token: string | undefined): { email: string } |
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString());
+    // Enforce the max age from the signed `iat` too — not just the cookie's
+    // maxAge — so a token copied out of the cookie jar still expires server-side.
+    if (typeof data.iat === "number" && Date.now() - data.iat > SESSION_MAX_AGE * 1000) {
+      return null;
+    }
     if (typeof data.email === "string" && data.email) return { email: data.email };
   } catch {
     // fall through

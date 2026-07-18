@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeEmail, verifyCode } from "@/lib/otp";
 import { makeSessionToken, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session";
+import { clientIp, rateLimit, sameOrigin } from "@/lib/security";
 
 // POST { email, code } → verifies the code and, on success, sets the signed
 // session cookie. From then on the visitor's picks key off their email.
 export async function POST(req: NextRequest) {
+  if (!sameOrigin(req)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   if (!process.env.AUTH_SECRET) {
     return NextResponse.json({ error: "auth_not_configured" }, { status: 503 });
+  }
+
+  // Per-code attempts are capped in verifyCode; this per-IP cap stops an
+  // attacker from spreading guesses across many emails from one host. 30/10 min.
+  if (!(await rateLimit("authverify", clientIp(req), 30, 600))) {
+    return NextResponse.json({ error: "too_many_attempts" }, { status: 429 });
   }
   let body: unknown;
   try {

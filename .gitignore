@@ -25,3 +25,5 @@ npm-debug.log*
 next-env.d.ts
 *.tsbuildinfo
 _api-poll.mjs
+.vercel
+.env*
