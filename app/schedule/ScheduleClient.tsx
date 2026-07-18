@@ -382,16 +382,24 @@ export default function ScheduleClient({
                     </span>
                     <button
                       onClick={() => toggleFriend(i)}
-                      title={on ? "Hide their sets on the timeline" : "Show their sets on the timeline"}
+                      role="switch"
+                      aria-checked={on}
+                      aria-label={`${f.name} on timeline`}
+                      title={on ? "Showing on timeline — click to hide" : "Hidden — click to show"}
                       style={{
-                        marginLeft: "auto", cursor: "pointer", borderRadius: 999,
-                        padding: "0.15rem 0.65rem", fontSize: "0.75rem",
-                        border: `1px solid ${on ? dot : "#3a3a44"}`,
-                        background: on ? "#1a2a1e" : "transparent",
-                        color: on ? "#cfeede" : "#8a8a94",
+                        marginLeft: "auto", flexShrink: 0, cursor: "pointer",
+                        width: 40, height: 22, padding: 0, borderRadius: 999, border: "none",
+                        position: "relative", background: on ? dot : "#3a3a44",
+                        transition: "background 0.15s ease",
                       }}
                     >
-                      {on ? "👁 Shown" : "Hidden"}
+                      <span
+                        style={{
+                          position: "absolute", top: 2, left: on ? 20 : 2,
+                          width: 18, height: 18, borderRadius: "50%", background: "#fff",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.4)", transition: "left 0.15s ease",
+                        }}
+                      />
                     </button>
                     <button onClick={() => removeFriend(i)} style={{ background: "none", border: "none", color: "#6a6a74", cursor: "pointer" }}>remove</button>
                   </div>
