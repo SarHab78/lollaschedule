@@ -467,7 +467,7 @@ export default function ScheduleClient({
 
       {/* Export + day tabs */}
       <div className="no-print" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-        <button className="btn" onClick={downloadIcs}>📅 Download .ics</button>
+        <button className="btn" onClick={downloadIcs}>📅 Add to your calendar</button>
         <button className="btn" style={{ background: copied ? "#1db954" : "#26262f", color: copied ? "#06210f" : undefined }} onClick={copyShare}>{copied ? "✓ Copied!" : "🔗 Copy share link"}</button>
         <button className="btn" style={{ background: "#26262f" }} onClick={() => window.print()}>🖨️ Print</button>
         {locks.length > 0 && (

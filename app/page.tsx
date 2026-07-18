@@ -23,9 +23,9 @@ export default async function Home({ searchParams }: Props) {
     <main className="hero">
       <h1>LollaSchedule 🎸</h1>
       <p className="subtitle">
-        Tell us which artists you love and we&apos;ll build your best Lollapalooza 2026
-        schedule (Grant Park · July 30 – Aug 2) — sorting out stage clashes and pointing you
-        to acts you&apos;d love but haven&apos;t heard yet.
+        Tell us which artists you&apos;re excited to see and we&apos;ll build your best
+        Lollapalooza 2026 schedule, highlighting some new artists you might love but
+        haven&apos;t heard yet.
       </p>
 
       {error ? (
@@ -36,7 +36,7 @@ export default async function Home({ searchParams }: Props) {
         <>
           <div className="btn-row" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
             <a className="btn" href="/schedule">
-              View my schedule ({savedPicks.length} artists) →
+              View my schedule →
             </a>
             <a className="btn" href="/pick" style={{ background: "#26262f" }}>
               Edit my picks
@@ -44,7 +44,7 @@ export default async function Home({ searchParams }: Props) {
           </div>
           {accountEmail ? (
             <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
-              Signed in as {accountEmail} — your picks follow you on any device.{" "}
+              Signed in as {accountEmail}.{" "}
               <SignOutButton />
             </p>
           ) : (
@@ -72,12 +72,12 @@ export default async function Home({ searchParams }: Props) {
             )}
           </div>
           <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
-            Just tap the lineup artists you love — takes under a minute.{" "}
+            Just tap the artists you want to see.{" "}
             {canSignIn ? (
               <>
-                <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> to save your
-                picks across devices. Skip it and your picks are kept on this device only — you&apos;d
-                need to re-pick on another phone or computer.
+                <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> (no password
+                needed) to save your picks across devices. Skip it and your picks are kept on this
+                device only.
               </>
             ) : (
               <>Your picks are saved on this device.</>

@@ -69,14 +69,13 @@ export default function PickClient({
       <h1>Pick your artists 🎸</h1>
       {returning ? (
         <p className="subtitle">
-          Welcome back — your picks are saved and loaded below. Change them if you like, or just hit{" "}
-          <strong>Build my schedule</strong> again. The more you add, the better it gets.
+          Welcome back! Update your picks and hit <strong>Build my schedule</strong> again. The
+          more you add, the better it gets.
         </p>
       ) : (
         <p className="subtitle">
-          Tap <strong>every</strong> artist you recognize and like — the more you pick, the better
-          your schedule matches your taste. We&apos;ll build your Lolla 2026 schedule and point out
-          other acts on the lineup you&apos;d probably like too. No login, about a minute.
+          Tap every artist you want to see. We&apos;ll build your Lolla 2026 schedule and fill it
+          with other artists from the lineup you&apos;d probably like too.
         </p>
       )}
 
@@ -150,7 +149,7 @@ export default function PickClient({
 
       <details open={initialOthers.length > 0} style={{ background: "#1a1a22", border: "1px solid #26262f", borderRadius: 10, padding: "0.85rem 1.1rem", marginBottom: "1rem" }}>
         <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-          + Add favorites who aren&apos;t playing (optional — sharpens discovery)
+          + Add favorites who aren&apos;t playing (optional)
         </summary>
         <textarea
           value={others}
