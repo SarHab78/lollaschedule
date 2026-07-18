@@ -74,7 +74,7 @@ export default function AccountClient({ next = "/schedule" }: { next?: string })
   };
 
   return (
-    <main style={{ maxWidth: 440 }}>
+    <main className="hero" style={{ maxWidth: 440 }}>
       <h1>Save your picks 🎟️</h1>
       <p className="subtitle">
         Sign in with just your email so your schedule follows you across devices — no

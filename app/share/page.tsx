@@ -36,8 +36,10 @@ export default async function Share({ searchParams }: Props) {
 
   return (
     <main>
-      <h1>Lollapalooza 2026 schedule</h1>
-      <p className="subtitle">Grant Park, Chicago · July 30 – Aug 2, 2026</p>
+      <div className="hero">
+        <h1>Lollapalooza 2026 schedule</h1>
+        <p className="subtitle">Grant Park, Chicago · July 30 – Aug 2, 2026</p>
+      </div>
 
       {picked.length === 0 && <p>No sets in this link.</p>}
 

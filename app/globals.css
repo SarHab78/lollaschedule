@@ -34,6 +34,23 @@ h1 {
   max-width: 36rem;
 }
 
+/* Centered page header ("hero"). Titles + intro text otherwise hug the left
+   edge of the centered container, which looks lopsided on a wide laptop screen
+   (there's dead space on the right). Centering balances it; on a phone the
+   container is already full-width so it just reads as centered either way.
+   Functional content below the header (grids, timeline) stays left-aligned. */
+.hero {
+  text-align: center;
+}
+.hero .subtitle {
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Center flex button rows inside a hero (text-align doesn't reach flex kids). */
+.hero .btn-row {
+  justify-content: center;
+}
+
 .btn {
   display: inline-block;
   background: #1db954;

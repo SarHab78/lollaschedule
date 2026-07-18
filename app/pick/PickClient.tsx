@@ -65,6 +65,7 @@ export default function PickClient({
 
   return (
     <main style={{ maxWidth: 1000, paddingBottom: 96 }}>
+      <div className="hero">
       <h1>Pick your artists 🎸</h1>
       {returning ? (
         <p className="subtitle">
@@ -89,6 +90,7 @@ export default function PickClient({
           <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> to keep them across devices.
         </p>
       ) : null}
+      </div>
 
       <input
         value={query}

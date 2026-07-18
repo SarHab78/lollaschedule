@@ -311,11 +311,13 @@ export default function ScheduleClient({
 
   return (
     <main style={{ maxWidth: 1100 }}>
-      <h1>Your Lolla 2026 schedule</h1>
-      <p className="subtitle">
-        Each column is a stage; time runs top to bottom. We picked the sets that maximize
-        how much you&apos;d enjoy the day, minus walking time between stages.
-      </p>
+      <div className="hero">
+        <h1>Your Lolla 2026 schedule</h1>
+        <p className="subtitle">
+          Each column is a stage; time runs top to bottom. We picked the sets that maximize
+          how much you&apos;d enjoy the day, minus walking time between stages.
+        </p>
+      </div>
 
       {aiUnavailable && (
         <div className="no-print" style={{ background: "#2a2416", border: "1px solid #5c4a21", color: "#ffd35c", padding: "0.75rem 1rem", borderRadius: 8, marginBottom: "1.5rem", fontSize: "0.9rem" }}>

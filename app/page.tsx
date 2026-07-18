@@ -20,7 +20,7 @@ export default async function Home({ searchParams }: Props) {
   const canSignIn = mailerEnabled() && !!process.env.AUTH_SECRET;
 
   return (
-    <main>
+    <main className="hero">
       <h1>LollaSchedule 🎸</h1>
       <p className="subtitle">
         Tell us which artists you love and we&apos;ll build your best Lollapalooza 2026
@@ -34,7 +34,7 @@ export default async function Home({ searchParams }: Props) {
 
       {returning ? (
         <>
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+          <div className="btn-row" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
             <a className="btn" href="/schedule">
               View my schedule ({savedPicks.length} artists) →
             </a>
@@ -61,7 +61,7 @@ export default async function Home({ searchParams }: Props) {
         </>
       ) : (
         <>
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+          <div className="btn-row" style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
             <a className="btn" href="/pick">
               Pick your artists →
             </a>

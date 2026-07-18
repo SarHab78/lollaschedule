@@ -16,14 +16,16 @@ export default async function Dashboard() {
 
   return (
     <main>
-      <h1>Your top artists</h1>
-      <p className="subtitle">
-        This is the raw signal we score the Lolla 2026 lineup against. Ready to see your
-        optimized day-by-day schedule?
-      </p>
-      <a className="btn" href="/schedule">
-        Build my schedule →
-      </a>
+      <div className="hero">
+        <h1>Your top artists</h1>
+        <p className="subtitle">
+          This is the raw signal we score the Lolla 2026 lineup against. Ready to see your
+          optimized day-by-day schedule?
+        </p>
+        <a className="btn" href="/schedule">
+          Build my schedule →
+        </a>
+      </div>
 
       <div className="grid">
         {artists.map((a, i) => (
