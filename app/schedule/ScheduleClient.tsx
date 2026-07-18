@@ -32,13 +32,11 @@ const WINDOW_LABEL: Partial<Record<TimeWindow, string>> = {
 const FRIEND_COLORS = ["#ff8a5c", "#ffd35c", "#5cffd3", "#c98aff"];
 
 const TIER_COLOR: Record<Tier, string> = {
-  "must-see": "#1db954", // green
-  "worth-it": "#4ad6ff", // blue
-  discovery: "#b07cff", // purple
+  "must-see": "#1db954", // green — artists you picked
+  discovery: "#b07cff", // purple — AI-suggested
 };
 const TIER_LABEL: Record<Tier, string> = {
   "must-see": "🔥 Must-see",
-  "worth-it": "👍 Worth it",
   discovery: "🔮 Discovery",
 };
 
@@ -173,8 +171,8 @@ export default function ScheduleClient({
     return [...yourChosenIds].map((id) => byId.get(id)!).filter(Boolean).sort((a, b) => a.start.localeCompare(b.start));
   }, [days, yourChosenIds]);
 
-  // Sets a conflict knocked out that you'd want to know about: direct favorites
-  // (must-see/worth-it) AND strong AI discoveries (fit ≥ HIGH_FIT). Shows what
+  // Sets a conflict knocked out that you'd want to know about: artists you
+  // picked (must-see) AND strong AI discoveries (fit ≥ HIGH_FIT). Shows what
   // you're missing + what beat it, so you can lock it back in.
   const missed = useMemo(() => {
     const rows: { set: UISet; day: string; conflict?: UISet }[] = [];
@@ -330,7 +328,7 @@ export default function ScheduleClient({
           ) : (
             <>
               <p style={{ fontSize: "0.82rem", color: "#8a8a94", margin: "0 0 0.6rem" }}>
-                Favorites you listen to — and <span style={{ color: TIER_COLOR.discovery }}>🔮 strong discoveries</span> (high AI fit) —
+                Artists you picked — and <span style={{ color: TIER_COLOR.discovery }}>🔮 strong discoveries</span> (high AI fit) —
                 that a conflict knocked out. <strong>Lock</strong> one to force it in; the day re-optimizes around it.
               </p>
               {missed.slice(0, 30).map(({ set: s, day, conflict }) => (
@@ -353,13 +351,12 @@ export default function ScheduleClient({
       {/* How to read the timeline */}
       <div className="no-print" style={{ ...panel, fontSize: "0.85rem", lineHeight: 1.5, color: "#b8b8c0" }}>
         <strong style={{ color: "#f5f5f7" }}>How to read this:</strong> every box is a set; the
-        whole day is filled. <strong>Colored boxes are your plan</strong> — color = how well the
-        artist fits your listening:
+        whole day is filled. <strong>Colored boxes are your plan</strong> — color = how the
+        artist made it in:
         <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.1rem" }}>
-          <li><span style={{ color: TIER_COLOR["must-see"], fontWeight: 700 }}>🔥 Must-see</span> — one of your top artists.</li>
-          <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700 }}>👍 Worth it</span> — an artist you already listen to.</li>
-          <li><span style={{ color: TIER_COLOR.discovery, fontWeight: 700 }}>🔮 Discovery</span> — an artist you don&apos;t play yet, AI-ranked by how well they fit your taste. The <strong>fit</strong> score (0–100) on each shows the prediction; higher = better match.</li>
-          <li><span style={{ color: TIER_COLOR["worth-it"], fontWeight: 700, border: `1.5px dashed ${TIER_COLOR["worth-it"]}`, borderRadius: 4, padding: "0 4px" }}>Dashed colored outline</span> = a favorite — or a <strong>strong 🔮 discovery</strong> (high AI fit) — you&apos;re <strong>missing</strong> because a conflict beat it. See the ⭐ panel above to lock it back in.</li>
+          <li><span style={{ color: TIER_COLOR["must-see"], fontWeight: 700 }}>🔥 Must-see</span> — an artist you picked.</li>
+          <li><span style={{ color: TIER_COLOR.discovery, fontWeight: 700 }}>🔮 Discovery</span> — an artist you didn&apos;t pick, AI-ranked by how well they fit your picks. The <strong>fit</strong> score (0–100) on each shows the prediction; higher = better match.</li>
+          <li><span style={{ color: TIER_COLOR["must-see"], fontWeight: 700, border: `1.5px dashed ${TIER_COLOR["must-see"]}`, borderRadius: 4, padding: "0 4px" }}>Dashed colored outline</span> = an artist you picked — or a <strong>strong 🔮 discovery</strong> (high AI fit) — you&apos;re <strong>missing</strong> because a conflict beat it. See the ⭐ panel above to lock it back in.</li>
           <li><span style={{ color: "#7a7a84", fontWeight: 700 }}>Dark gray boxes</span> are other sets we didn&apos;t pick.</li>
           <li><strong>Click</strong> a box to lock it (🔒) and re-optimize · colored dots = a friend is going too.</li>
         </ul>

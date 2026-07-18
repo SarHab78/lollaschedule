@@ -200,23 +200,24 @@ export async function buildTasteProfile(
   bump(recent.flatMap((t) => t.artists.map((a) => a.name)), 0.12, 0.4, true, "recent");
 
   // Liked/saved songs are a deliberate "I like this" act — floor any artist
-  // whose song you've saved at worth-it (so they never read as a wildcard),
-  // scaling up with how many of their songs you've liked.
+  // whose song you've saved above the discovery band (so they read as a real
+  // favorite), scaling up with how many of their songs you've liked.
+  // (Spotify path only — the live product uses the manual pick flow.)
   const savedCounts = new Map<string, number>();
   for (const n of saved.flatMap((t) => t.artists.map((a) => a.name))) {
     const key = normalizeName(n);
     savedCounts.set(key, (savedCounts.get(key) ?? 0) + 1);
   }
   for (const [key, c] of savedCounts) {
-    // 1 liked song == following them (0.2, worth-it); more likes scale up.
+    // 1 liked song == following them (floor 0.2); more likes scale up.
     const floor = Math.min(0.45, 0.2 + 0.05 * (c - 1)); // 1→.20, 2→.25 … cap .45
     affinity.set(key, Math.max(affinity.get(key) ?? 0, floor));
     note(key, `saved×${c}`);
   }
 
   // Followed artists: a lightweight "I like them" signal (you can follow after
-  // one song) — floor at worth-it, NOT must-see. A follow alone shouldn't make
-  // someone a top highlighted pick; that's reserved for actual heavy listening.
+  // one song) — floor at 0.2 so they count as a favorite you know, not a blind
+  // discovery. (Spotify path only; the live product uses the manual pick flow.)
   followed.forEach((a) => {
     const key = normalizeName(a.name);
     affinity.set(key, Math.max(affinity.get(key) ?? 0, 0.2));
