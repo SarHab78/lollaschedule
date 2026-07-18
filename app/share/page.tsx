@@ -1,8 +1,9 @@
 import { getLineup } from "@/lib/lineup";
+import { decodeSets } from "@/lib/setcode";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ sets?: string }> };
+type Props = { searchParams: Promise<{ s?: string; sets?: string }> };
 
 function fmt(iso: string): string {
   const [, t] = iso.split("T");
@@ -12,11 +13,16 @@ function fmt(iso: string): string {
   return m === 0 ? `${hr}${ampm}` : `${hr}:${String(m).padStart(2, "0")}${ampm}`;
 }
 
-// Public, read-only view of a schedule encoded as ?sets=id1,id2,... — renders
-// purely from the (public) lineup data, so anyone can open it without a login.
+// Public, read-only view of a schedule encoded as ?s=<compact code> (or the
+// legacy ?sets=id1,id2,... CSV) — renders purely from the (public) lineup data,
+// so anyone can open it without a login.
 export default async function Share({ searchParams }: Props) {
-  const { sets } = await searchParams;
-  const ids = new Set((sets ?? "").split(",").filter(Boolean));
+  const { s, sets } = await searchParams;
+  // New compact form: ?s=<base64url bitset>. Legacy form: ?sets=id1,id2,... —
+  // still honored so links shared before the compact encoding keep working.
+  const ids = new Set(
+    s ? decodeSets(s) : (sets ?? "").split(",").filter(Boolean)
+  );
   const lineup = getLineup();
   const picked = lineup.sets.filter((s) => ids.has(s.id));
 

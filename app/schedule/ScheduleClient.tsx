@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { optimizeDay, PlannableSet } from "@/lib/optimizer";
 import { buildIcs, IcsSet } from "@/lib/ics";
+import { encodeSets, parseSharePayload } from "@/lib/setcode";
 import type { Tier } from "@/lib/scoring";
 import type { TasteOptions, TimeWindow } from "@/lib/taste";
 
@@ -209,7 +210,7 @@ export default function ScheduleClient({
     URL.revokeObjectURL(url);
   };
   const copyShare = async () => {
-    const link = `${location.origin}/share?sets=${allChosenSets.map((s) => s.id).join(",")}`;
+    const link = `${location.origin}/share?s=${encodeSets(allChosenSets.map((s) => s.id))}`;
     try {
       await navigator.clipboard.writeText(link);
       alert("Share link copied! Send it to a friend — they can paste it below to compare.");
@@ -220,13 +221,7 @@ export default function ScheduleClient({
 
   // ---- friends ----
   const addFriend = () => {
-    const raw = friendLink.trim();
-    let s = raw;
-    const i = s.indexOf("sets=");
-    if (i >= 0) s = s.slice(i + 5);
-    s = s.split("&")[0];
-    try { s = decodeURIComponent(s); } catch {}
-    const ids = s.split(",").map((x) => x.trim()).filter((x) => validIds.has(x));
+    const ids = parseSharePayload(friendLink).filter((x) => validIds.has(x));
     if (ids.length === 0) {
       alert("Couldn't find any valid sets in that link.");
       return;

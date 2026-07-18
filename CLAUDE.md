@@ -175,9 +175,12 @@ research agents.
    in `.env.local` (gitignored). User is on board; just needs to supply the key.
    The claude-api skill has the exact SDK usage — invoke it when building.
 2. Tune scoring weights + stage-distance matrix against reality.
-3. **Share link is ugly** (user flagged): currently `/share?sets=set-26,...` long
-   csv. Replace with compact short-code+lookup or base62-compressed payload.
-   Keep `/share` renderable without auth.
+3. ~~**Share link is ugly**~~ ✅ DONE (2026-07-18). Was `/share?sets=set-26,...`
+   long CSV; now `/share?s=<code>` — a stateless base64url **bitset** of the
+   chosen set indices (`lib/setcode.ts`), ~27–30 URL-safe chars regardless of
+   count, no server storage (still auth-free + Vercel read-only-FS safe). Legacy
+   `?sets=` CSV links still resolve (share page + friends paste both accept
+   either via `parseSharePayload`). Codec is order/dup-independent, fuzz-tested.
 4. Polish: persist locks across reloads, mobile timeline, inline conflicts/
    runner-ups, loading state on first /schedule load (enrichment is slow cold).
 5. (later) Apple Music via MusicKit; quota-extension to take the app public.
