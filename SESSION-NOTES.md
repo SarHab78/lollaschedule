@@ -5,11 +5,17 @@ Email accounts are now **LIVE locally**. Created the dedicated sender
 `GMAIL_USER`/`GMAIL_APP_PASSWORD` in `.env.local` (`AUTH_SECRET` was already set).
 Verified SMTP auth, sent a test email (landed in inbox, NOT spam), and ran the
 full `/account` → email → 6-digit code → session → `/pick`/`/schedule` loop
-end-to-end in the browser — works. Typecheck clean. Committing the whole
-manual-picks + accounts feature set now.
-- **STILL TODO (👤 Sarah):** add `AUTH_SECRET`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`
-  to **Vercel** env (Production) + redeploy — until then accounts are local-only
-  and prod keeps cookie-only persistence (graceful).
+end-to-end in the browser — works. Typecheck clean. Committed (`28bffca`) +
+pushed to `main`.
+- **Vercel prod now LIVE:** installed + linked the Vercel CLI (scope
+  `sarahs-projects-6a29c197`), added `AUTH_SECRET`, `GMAIL_USER`,
+  `GMAIL_APP_PASSWORD` to Production + redeployed. Confirmed prod
+  `/api/auth/request` sends a real code (accounts work cross-device in prod).
+- **Caught a prod gap:** `ANTHROPIC_API_KEY` was **never set in Production** —
+  the AI discovery predictor had been silently degrading to picks-only in prod
+  this whole time (`predict.ts` is graceful without the key). Pushed the key +
+  redeployed, so AI discovery now actually runs live. (Earlier notes claiming
+  "AI predictions verified live" were local-only.)
 
 ---
 
