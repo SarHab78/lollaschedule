@@ -192,6 +192,9 @@ export default function ScheduleClient({
   const [active, setActive] = useState(0);
   const [missedOpen, setMissedOpen] = useState(true);
   const [locks, setLocks] = usePersisted<string[]>("lolla_locks", []);
+  // Set ids the user has opted OUT of their share link (default: share everything).
+  // Persisted so a curated share selection survives reloads/re-optimizes.
+  const [shareExcluded, setShareExcluded] = usePersisted<string[]>("lolla_share_excluded", []);
   const [friends, setFriends] = useSyncedFriends(initialFriends);
   const [friendName, setFriendName] = useState("");
   const [friendLink, setFriendLink] = useState("");
@@ -227,6 +230,25 @@ export default function ScheduleClient({
     const byId = new Map(days.flatMap((d) => d.sets).map((s) => [s.id, s]));
     return [...yourChosenIds].map((id) => byId.get(id)!).filter(Boolean).sort((a, b) => a.start.localeCompare(b.start));
   }, [days, yourChosenIds]);
+
+  // ---- share selection ----
+  // The share link encodes only the sets the user hasn't excluded, so you can
+  // keep e.g. your 🔮 AI discoveries private and share just the artists you picked.
+  const shareExcludedSet = useMemo(() => new Set(shareExcluded), [shareExcluded]);
+  const shareSets = useMemo(
+    () => allChosenSets.filter((s) => !shareExcludedSet.has(s.id)),
+    [allChosenSets, shareExcludedSet],
+  );
+  const toggleShare = (id: string) =>
+    setShareExcluded((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const shareAll = () => setShareExcluded([]);
+  const sharePicksOnly = () =>
+    setShareExcluded(allChosenSets.filter((s) => s.tier === "discovery").map((s) => s.id));
+  // Presets are "active" when the current exclusions exactly match them.
+  const shareAllActive = shareExcluded.length === 0;
+  const picksOnlyActive =
+    allChosenSets.some((s) => s.tier === "discovery") &&
+    allChosenSets.every((s) => (s.tier === "discovery") === shareExcludedSet.has(s.id));
 
   // Sets a conflict knocked out that you'd want to know about: artists you
   // picked (must-see) AND strong AI discoveries (fit ≥ HIGH_FIT). Shows what
@@ -266,7 +288,8 @@ export default function ScheduleClient({
     URL.revokeObjectURL(url);
   };
   const copyShare = async () => {
-    const link = `${location.origin}/share?s=${encodeSets(allChosenSets.map((s) => s.id))}`;
+    if (shareSets.length === 0) return;
+    const link = `${location.origin}/share?s=${encodeSets(shareSets.map((s) => s.id))}`;
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
@@ -465,10 +488,66 @@ export default function ScheduleClient({
         </ul>
       </div>
 
+      {/* ---- Share selection ---- */}
+      <details className="no-print" style={panel}>
+        <summary style={summary}>
+          🔗 Share your schedule{" "}
+          <span style={{ color: "#4ad6ff" }}>· {shareSets.length} of {allChosenSets.length} set{allChosenSets.length === 1 ? "" : "s"}</span>
+        </summary>
+        <div style={{ marginTop: "0.75rem" }}>
+          <p style={{ fontSize: "0.82rem", color: "#8a8a94", margin: "0 0 0.6rem" }}>
+            Pick which sets go in your share link. Uncheck any you&apos;d rather keep to
+            yourself — e.g. hide your <span style={{ color: TIER_COLOR.discovery }}>🔮 AI discoveries</span> and
+            share only the artists you picked.
+          </p>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: "0.75rem" }}>
+            <button style={chip(shareAllActive)} onClick={shareAll}>All sets</button>
+            <button style={chip(picksOnlyActive)} onClick={sharePicksOnly}>Only my picks 🔥</button>
+          </div>
+          {allChosenSets.length === 0 ? (
+            <p style={{ fontSize: "0.85rem", color: "#8a8a94", margin: 0 }}>No sets in your schedule yet.</p>
+          ) : (
+            (() => {
+              const dayLabel = new Map(days.map((d) => [d.date, d.label]));
+              const groups = new Map<string, UISet[]>();
+              for (const s of allChosenSets) {
+                const date = s.start.split("T")[0];
+                const arr = groups.get(date) ?? [];
+                arr.push(s);
+                groups.set(date, arr);
+              }
+              return [...groups.entries()].map(([date, sets]) => (
+                <div key={date} style={{ marginBottom: "0.5rem" }}>
+                  <div style={{ fontSize: "0.78rem", fontWeight: 600, color: "#8a8a94", margin: "0.4rem 0 0.1rem" }}>
+                    {dayLabel.get(date) ?? date} · {date.slice(5)}
+                  </div>
+                  {sets.map((s) => (
+                    <label key={s.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "0.35rem 0", borderTop: "1px solid #26262f", fontSize: "0.85rem", cursor: "pointer" }}>
+                      <input type="checkbox" checked={!shareExcludedSet.has(s.id)} onChange={() => toggleShare(s.id)} style={{ cursor: "pointer" }} />
+                      <span style={{ width: 10, height: 10, borderRadius: 3, background: TIER_COLOR[s.tier], flexShrink: 0 }} />
+                      <span style={{ fontWeight: 600 }}>{s.artist}</span>
+                      <span style={{ color: "#8a8a94" }}>{fmt(s.start)} · {s.stage}</span>
+                    </label>
+                  ))}
+                </div>
+              ));
+            })()
+          )}
+          <button
+            className="btn"
+            style={{ marginTop: "0.75rem", background: copied ? "#1db954" : undefined, color: copied ? "#06210f" : undefined, opacity: shareSets.length === 0 ? 0.5 : 1 }}
+            disabled={shareSets.length === 0}
+            onClick={copyShare}
+          >
+            {copied ? "✓ Copied!" : `🔗 Copy link (${shareSets.length})`}
+          </button>
+        </div>
+      </details>
+
       {/* Export + day tabs */}
       <div className="no-print" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
         <button className="btn" onClick={downloadIcs}>📅 Add to your calendar</button>
-        <button className="btn" style={{ background: copied ? "#1db954" : "#26262f", color: copied ? "#06210f" : undefined }} onClick={copyShare}>{copied ? "✓ Copied!" : "🔗 Copy share link"}</button>
+        <button className="btn" style={{ background: copied ? "#1db954" : "#26262f", color: copied ? "#06210f" : undefined, opacity: shareSets.length === 0 ? 0.5 : 1 }} disabled={shareSets.length === 0} onClick={copyShare}>{copied ? "✓ Copied!" : shareSets.length < allChosenSets.length ? `🔗 Copy share link (${shareSets.length})` : "🔗 Copy share link"}</button>
         <button className="btn" style={{ background: "#26262f" }} onClick={() => window.print()}>🖨️ Print</button>
         {locks.length > 0 && (
           <button className="btn" style={{ background: "#3a2030" }} onClick={() => setLocks([])}>✕ Clear {locks.length} lock{locks.length > 1 ? "s" : ""}</button>
