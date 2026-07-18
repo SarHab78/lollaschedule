@@ -122,18 +122,69 @@ function usePersisted<T>(key: string, initial: T): [T, (v: T | ((p: T) => T)) =>
   return [val, setVal];
 }
 
+// Friends persistence with cross-device sync. The server (account- or
+// cookie-keyed KV) is the source of truth and seeds `initial`; localStorage is
+// a fast local cache and the migration path for anyone who saved friends before
+// sync existed. Every change writes through to both — localStorage instantly,
+// the server debounced — so a signed-in user's compare list follows them across
+// devices.
+function useSyncedFriends(initial: Friend[]): [Friend[], (v: Friend[] | ((p: Friend[]) => Friend[])) => void] {
+  const [friends, setFriends] = useState<Friend[]>(initial);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    // Server value wins. Only if the server has nothing do we adopt any
+    // pre-sync localStorage friends (they get pushed up by the effect below).
+    let next = initial;
+    if (initial.length === 0) {
+      try {
+        const raw = localStorage.getItem("lolla_friends");
+        const local = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(local) && local.length) next = local;
+      } catch {}
+    }
+    setFriends(next);
+    setLoaded(true);
+    // initial is a fresh array each render; intentionally hydrate once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem("lolla_friends", JSON.stringify(friends));
+    } catch {}
+    // Debounce the network write so a burst of toggles sends one request.
+    const t = setTimeout(() => {
+      fetch("/api/friends/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friends }),
+        keepalive: true, // let it finish if the user navigates away
+      }).catch(() => {});
+    }, 400);
+    return () => clearTimeout(t);
+  }, [friends, loaded]);
+
+  return [friends, setFriends];
+}
+
 export default function ScheduleClient({
   days,
   stageOrder,
   options,
   manualMode = false,
   aiUnavailable = false,
+  initialFriends = [],
+  signedIn = false,
 }: {
   days: DayData[];
   stageOrder: string[];
   options: TasteOptions;
   manualMode?: boolean;
   aiUnavailable?: boolean;
+  initialFriends?: Friend[];
+  signedIn?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -141,7 +192,7 @@ export default function ScheduleClient({
   const [active, setActive] = useState(0);
   const [missedOpen, setMissedOpen] = useState(true);
   const [locks, setLocks] = usePersisted<string[]>("lolla_locks", []);
-  const [friends, setFriends] = usePersisted<Friend[]>("lolla_friends", []);
+  const [friends, setFriends] = useSyncedFriends(initialFriends);
   const [friendName, setFriendName] = useState("");
   const [friendLink, setFriendLink] = useState("");
   const [copied, setCopied] = useState(false);
@@ -299,6 +350,16 @@ export default function ScheduleClient({
             Ask a friend to hit <strong>Copy share link</strong> and send it to you. Paste it here and
             they&apos;re saved — each gets their own dot color on the timeline, and you can show or hide
             any friend&apos;s sets anytime.
+          </p>
+          <p style={{ fontSize: "0.78rem", color: signedIn ? "#5cffd3" : "#8a8a94", margin: "0 0 0.6rem" }}>
+            {signedIn ? (
+              <>✓ Synced to your account — your friends follow you on every device.</>
+            ) : (
+              <>
+                Saved on this device.{" "}
+                <a href="/account" style={{ color: "#4ad6ff" }}>Sign in</a> to sync your friends across devices.
+              </>
+            )}
           </p>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: "0.75rem" }}>
             <input value={friendName} onChange={(e) => setFriendName(e.target.value)} placeholder="Friend's name" style={{ ...input, maxWidth: 160 }} />

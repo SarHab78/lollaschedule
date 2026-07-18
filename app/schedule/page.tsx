@@ -12,6 +12,8 @@ import {
 import { enrichArtists, cachedArtists, ArtistMeta } from "@/lib/enrich";
 import { getMe } from "@/lib/spotify";
 import { loadManualPicks } from "@/lib/manual";
+import { loadFriends } from "@/lib/friends";
+import { getSessionEmail } from "@/lib/session";
 import { getLineup, uniqueArtists } from "@/lib/lineup";
 import { scoreArtist } from "@/lib/scoring";
 import { predictFits } from "@/lib/predict";
@@ -138,5 +140,20 @@ export default async function Schedule({ searchParams }: Props) {
   const pos = stageDistances.walkMinutesFromNorth as Record<string, number>;
   const stageOrder = [...lineup.stages].sort((a, b) => (pos[a] ?? 0) - (pos[b] ?? 0));
 
-  return <ScheduleClient days={days} stageOrder={stageOrder} options={options} manualMode={manualMode} aiUnavailable={aiUnavailable} />;
+  // Friends sync: load the durable (account- or cookie-keyed) list to seed the
+  // client, and tell it whether there's an email account behind it so it can
+  // show "synced across devices" vs "saved on this device".
+  const [initialFriends, email] = await Promise.all([loadFriends(), getSessionEmail()]);
+
+  return (
+    <ScheduleClient
+      days={days}
+      stageOrder={stageOrder}
+      options={options}
+      manualMode={manualMode}
+      aiUnavailable={aiUnavailable}
+      initialFriends={initialFriends}
+      signedIn={!!email}
+    />
+  );
 }
