@@ -1,5 +1,16 @@
 # Session notes — 2026-07-17
 
+**Spotify flow hidden.** The landing (`app/page.tsx`) no longer links to the
+Spotify connect flow — dev mode caps it at 25 allowlisted accounts, so no real
+user could use it. Entry points are now (1) **manual picks** (anonymous,
+per-device cookie) and (2) **optional email account** (picks follow you across
+devices; landing notes that skipping email = re-pick on another device). The
+Spotify code is KEPT, not deleted (`/login`, `/callback`, `/dashboard`,
+`lib/spotify.ts`, and `/schedule`'s Spotify branch all still exist) — just
+unlinked so it's unreachable from the UI. Easy to un-hide later if quota opens.
+
+---
+
 Email accounts are now **LIVE locally**. Created the dedicated sender
 `lollaschedule@gmail.com`, enabled 2FA + generated a Gmail app password, filled
 `GMAIL_USER`/`GMAIL_APP_PASSWORD` in `.env.local` (`AUTH_SECRET` was already set).

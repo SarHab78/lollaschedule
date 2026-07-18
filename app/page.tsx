@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { loadManualPicks } from "@/lib/manual";
 import { getSessionEmail } from "@/lib/session";
 import { mailerEnabled } from "@/lib/mailer";
@@ -6,40 +5,31 @@ import SignOutButton from "./SignOutButton";
 
 type Props = { searchParams: Promise<{ error?: string }> };
 
+// NOTE: the Spotify connect flow (/login → /callback → /dashboard, lib/spotify.ts)
+// is intentionally HIDDEN — it's dev-mode-capped at 25 allowlisted accounts, so
+// no real user can use it. The code is kept (not deleted) but unlinked from the
+// UI. The only entry points now are manual picks (anonymous, per-device) and the
+// optional email account (picks that follow you across devices).
 export default async function Home({ searchParams }: Props) {
   const { error } = await searchParams;
 
-  // Returning manual visitor with saved picks (cookie or account)? Offer a
-  // straight shot back to their schedule so they never have to re-select.
-  const jar = await cookies();
-  const hasSpotify = !!jar.get("spotify_access_token")?.value;
+  // Returning visitor with saved picks (cookie or account)? Offer a straight
+  // shot back to their schedule so they never have to re-select.
   const [savedPicks, accountEmail] = await Promise.all([loadManualPicks(), getSessionEmail()]);
-  const returning = !hasSpotify && savedPicks.length > 0;
+  const returning = savedPicks.length > 0;
   const canSignIn = mailerEnabled() && !!process.env.AUTH_SECRET;
 
   return (
     <main>
       <h1>LollaSchedule 🎸</h1>
       <p className="subtitle">
-        Connect your Spotify and we&apos;ll build your optimal Lollapalooza 2026 schedule
-        (Grant Park · July 30 – Aug 2) from what you actually listen to — resolving stage
-        conflicts and surfacing artists you&apos;d love but haven&apos;t found yet.
+        Tell us which artists you love and we&apos;ll build your optimal Lollapalooza 2026
+        schedule (Grant Park · July 30 – Aug 2) — resolving stage conflicts and surfacing
+        artists you&apos;d love but haven&apos;t found yet.
       </p>
 
-      {error === "spotify_busy" ? (
-        <div className="error">
-          Spotify is temporarily rate-limiting us (too many requests in a short window).
-          Wait a minute, then hit Connect again — your data&apos;s fine, it just needs a breather.
-        </div>
-      ) : error === "spotify_failed" ? (
-        <div className="error">
-          Couldn&apos;t reach Spotify just now. Wait a moment and try connecting again.
-        </div>
-      ) : error ? (
-        <div className="error">
-          Login error: {error}. If this says &quot;user not registered,&quot; add your Spotify
-          account under your app&apos;s Settings → User Management in the developer dashboard.
-        </div>
+      {error ? (
+        <div className="error">Something went wrong: {error}. Please try again.</div>
       ) : null}
 
       {returning ? (
@@ -59,33 +49,38 @@ export default async function Home({ searchParams }: Props) {
             </p>
           ) : (
             <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
-              Picks saved on this device.{" "}
+              Picks saved on this device only.{" "}
               {canSignIn && (
                 <>
-                  <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> to keep them across devices.{" "}
+                  <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> to keep
+                  them on any device.
                 </>
               )}
-              Have Spotify? <a href="/login" style={{ color: "#1db954" }}>Connect it</a> for an auto-built schedule.
             </p>
           )}
         </>
       ) : (
         <>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-            <a className="btn" href="/login">
-              Connect Spotify
+            <a className="btn" href="/pick">
+              Pick your artists →
             </a>
-            <a className="btn" href="/pick" style={{ background: "#26262f" }}>
-              Pick your artists (no login)
-            </a>
+            {canSignIn && (
+              <a className="btn" href="/account" style={{ background: "#26262f" }}>
+                Sign in with email
+              </a>
+            )}
           </div>
           <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
-            No Spotify? Just tap the lineup artists you love — takes under a minute.
-            {canSignIn && (
+            Just tap the lineup artists you love — takes under a minute.{" "}
+            {canSignIn ? (
               <>
-                {" "}Want your picks on every device?{" "}
-                <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a>.
+                <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> to save your
+                picks across devices. Skip it and your picks are kept on this device only — you&apos;d
+                need to re-pick on another phone or computer.
               </>
+            ) : (
+              <>Your picks are saved on this device.</>
             )}
           </p>
         </>
