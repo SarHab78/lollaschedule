@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { optimizeDay, PlannableSet } from "@/lib/optimizer";
+import { optimizeDay, PlannableSet, BreakWindow } from "@/lib/optimizer";
 import { buildIcs, IcsSet } from "@/lib/ics";
 import { encodeSets, parseSharePayload } from "@/lib/setcode";
 import type { Tier } from "@/lib/scoring";
@@ -195,6 +195,11 @@ export default function ScheduleClient({
   // Set ids the user has opted OUT of their share link (default: share everything).
   // Persisted so a curated share selection survives reloads/re-optimizes.
   const [shareExcluded, setShareExcluded] = usePersisted<string[]>("lolla_share_excluded", []);
+  // "Take a break" windows, keyed by day date. One break = one act's slot the
+  // user skipped; the optimizer leaves that all-stages window empty.
+  type Break = { date: string; start: string; end: string };
+  const [breaks, setBreaks] = usePersisted<Break[]>("lolla_breaks", []);
+  const [menuFor, setMenuFor] = useState<string | null>(null); // set id whose action menu is open
   const [friends, setFriends] = useSyncedFriends(initialFriends);
   const [friendName, setFriendName] = useState("");
   const [friendLink, setFriendLink] = useState("");
@@ -202,25 +207,60 @@ export default function ScheduleClient({
 
   const lockSet = useMemo(() => new Set(locks), [locks]);
 
+  const overlaps = (aStart: string, aEnd: string, bStart: string, bEnd: string) =>
+    mins(aStart) < mins(bEnd) && mins(aEnd) > mins(bStart);
+
+  // Lock an act in. Breaks lose to an explicit lock, so clear any break window
+  // on this day that overlaps the act being locked.
+  const lockIn = (s: UISet, date: string) => {
+    setBreaks((p) => p.filter((b) => !(b.date === date && overlaps(b.start, b.end, s.start, s.end))));
+    setLocks((p) => (p.includes(s.id) ? p : [...p, s.id]));
+  };
+  const unlock = (id: string) => setLocks((p) => p.filter((x) => x !== id));
   const toggleLock = (id: string) =>
     setLocks((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+
+  // Take a break over an act's slot. The break wins over any lock in that
+  // window, so clear overlapping locks (and this act's own lock) as we add it.
+  const takeBreak = (s: UISet, date: string) => {
+    const dayById = new Map((days.find((d) => d.date === date)?.sets ?? []).map((x) => [x.id, x]));
+    setLocks((p) => p.filter((id) => {
+      const l = dayById.get(id);
+      return !(l && overlaps(l.start, l.end, s.start, s.end));
+    }));
+    setBreaks((p) => [...p, { date, start: s.start, end: s.end }]);
+  };
+  // Undo a break: drop any window on this day that overlaps the act clicked.
+  const rejoin = (s: UISet, date: string) =>
+    setBreaks((p) => p.filter((b) => !(b.date === date && overlaps(b.start, b.end, s.start, s.end))));
 
   const validIds = useMemo(
     () => new Set(days.flatMap((d) => d.sets.map((s) => s.id))),
     [days],
   );
 
-  // Optimize each day, honoring locked picks.
+  // Break windows for a given day.
+  const breaksForDate = (date: string): BreakWindow[] =>
+    breaks.filter((b) => b.date === date).map((b) => ({ start: b.start, end: b.end }));
+  // Is this set covered by a break on its day? (Then it's an intentional gap,
+  // not a "missing pick" — suppress the nag + dashed outline for it.)
+  const isBroken = (s: UISet, date: string) =>
+    breaks.some((b) => b.date === date && overlaps(b.start, b.end, s.start, s.end));
+
+  // Optimize each day, honoring locked picks and break windows.
   const itineraries = useMemo(() => {
     return days.map((d) => {
       const plannable: PlannableSet[] = d.sets.map((s) => ({ id: s.id, artist: s.artist, stage: s.stage, start: s.start, end: s.end, score: s.score }));
-      const chosen = optimizeDay(plannable, [...lockSet]);
+      const chosen = optimizeDay(plannable, [...lockSet], breaksForDate(d.date));
       return { date: d.date, chosenIds: new Set(chosen.map((c) => c.id)) };
     });
-  }, [days, lockSet]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days, lockSet, breaks]);
 
   const day = days[active];
   const dayItin = itineraries[active];
+  const dayBreaks = breaks.filter((b) => b.date === day.date);
+  const TIMELINE_H = (DAY_END - DAY_START) * PX_PER_MIN;
 
   const yourChosenIds = useMemo(
     () => new Set(itineraries.flatMap((it) => [...it.chosenIds])),
@@ -259,6 +299,7 @@ export default function ScheduleClient({
       const d = days[di];
       d.sets.forEach((s) => {
         if (it.chosenIds.has(s.id)) return;
+        if (isBroken(s, d.date)) return; // you chose to break over it — don't nag
         if (s.tier === "discovery" && s.fit < HIGH_FIT) return; // weak discovery — skip
         const conflict = d.sets.find(
           (o) => it.chosenIds.has(o.id) && mins(o.start) < mins(s.end) && mins(o.end) > mins(s.start),
@@ -269,7 +310,8 @@ export default function ScheduleClient({
     // Direct favorites (banded score 60-100) sort above discoveries (≤54); within
     // each, higher first. For discoveries that means higher fit first.
     return rows.sort((a, b) => b.set.score - a.set.score);
-  }, [days, itineraries]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days, itineraries, breaks]);
 
   // ---- taste settings → server re-score via URL ----
   // Always score on all signals; only the listening window is user-selectable.
@@ -484,7 +526,8 @@ export default function ScheduleClient({
           <li><span style={{ color: TIER_COLOR.discovery, fontWeight: 700 }}>🔮 Discovery</span> — an artist you didn&apos;t pick, AI-ranked by how well they fit your picks. The <strong>fit</strong> score (0–100) on each shows the prediction; higher = better match.</li>
           <li><span style={{ color: TIER_COLOR["must-see"], fontWeight: 700, border: `1.5px dashed ${TIER_COLOR["must-see"]}`, borderRadius: 4, padding: "0 4px" }}>Dashed colored outline</span> = an artist you picked — or a <strong>strong 🔮 discovery</strong> (high AI fit) — you&apos;re <strong>missing</strong> because a conflict beat it. See the ⭐ panel above to lock it back in.</li>
           <li><span style={{ color: "#7a7a84", fontWeight: 700 }}>Dark gray boxes</span> are other sets we didn&apos;t pick.</li>
-          <li><strong>Click</strong> a box to lock it (🔒) and re-optimize · colored dots = a friend is going too.</li>
+          <li><span style={{ background: "repeating-linear-gradient(45deg, rgba(255,211,92,0.25) 0 6px, rgba(255,211,92,0.08) 6px 12px)", color: "#ffd35c", fontWeight: 700, borderRadius: 4, padding: "0 5px" }}>☕ Break</span> — a slot you skipped to rest; nothing gets scheduled across any stage there.</li>
+          <li><strong>Click</strong> a box for options — <strong>🔒 Lock</strong> it in, or <strong>☕ Take a break</strong> over that slot. Colored dots = a friend is going too.</li>
         </ul>
       </div>
 
@@ -552,6 +595,9 @@ export default function ScheduleClient({
         {locks.length > 0 && (
           <button className="btn" style={{ background: "#3a2030" }} onClick={() => setLocks([])}>✕ Clear {locks.length} lock{locks.length > 1 ? "s" : ""}</button>
         )}
+        {breaks.length > 0 && (
+          <button className="btn" style={{ background: "#2a2416", color: "#ffd35c" }} onClick={() => setBreaks([])}>☕ Clear {breaks.length} break{breaks.length > 1 ? "s" : ""}</button>
+        )}
       </div>
 
       <div className="no-print" style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
@@ -563,12 +609,20 @@ export default function ScheduleClient({
       </div>
 
       {/* Timeline */}
+      {menuFor && (
+        // Click-away layer to dismiss the open action menu.
+        <div onClick={() => setMenuFor(null)} style={{ position: "fixed", inset: 0, zIndex: 25 }} />
+      )}
       <div className="no-print" style={{ display: "flex", gap: 4, overflowX: "auto", opacity: pending ? 0.5 : 1 }}>
         <div style={{ position: "relative", width: 44, flexShrink: 0, height: (DAY_END - DAY_START) * PX_PER_MIN }}>
           {Array.from({ length: (DAY_END - DAY_START) / 60 + 1 }, (_, i) => (
             <div key={i} style={{ position: "absolute", top: i * 60 * PX_PER_MIN - 7, right: 6, fontSize: "0.7rem", color: "#6a6a74" }}>
               {fmt(`x T${String(12 + i).padStart(2, "0")}:00`)}
             </div>
+          ))}
+          {/* ☕ markers in the gutter, aligned to each break band */}
+          {dayBreaks.map((b, i) => (
+            <div key={i} title={`Break ${fmt(b.start)}–${fmt(b.end)}`} style={{ position: "absolute", top: (mins(b.start) - DAY_START) * PX_PER_MIN, right: 4, fontSize: "0.8rem" }}>☕</div>
           ))}
         </div>
 
@@ -578,6 +632,18 @@ export default function ScheduleClient({
             <div style={{ position: "relative", height: (DAY_END - DAY_START) * PX_PER_MIN, background: "#14141a", borderRadius: 6 }}>
               {Array.from({ length: (DAY_END - DAY_START) / 60 }, (_, i) => (
                 <div key={i} style={{ position: "absolute", top: i * 60 * PX_PER_MIN, left: 0, right: 0, borderTop: "1px solid #1f1f27" }} />
+              ))}
+              {/* ☕ break bands — one slice per stage column reads as a full-width
+                  band. pointer-events:none so the act underneath stays clickable. */}
+              {dayBreaks.map((b, i) => (
+                <div key={`brk-${i}`} style={{
+                  position: "absolute", left: 0, right: 0,
+                  top: (mins(b.start) - DAY_START) * PX_PER_MIN,
+                  height: Math.max(10, (mins(b.end) - mins(b.start)) * PX_PER_MIN - 2),
+                  background: "repeating-linear-gradient(45deg, rgba(255,211,92,0.10) 0 8px, rgba(255,211,92,0.04) 8px 16px)",
+                  borderTop: "1px dashed rgba(255,211,92,0.5)", borderBottom: "1px dashed rgba(255,211,92,0.5)",
+                  pointerEvents: "none", zIndex: 1,
+                }} />
               ))}
               {(() => {
                 const stageSets = day.sets.filter((s) => s.stage === stage);
@@ -590,45 +656,70 @@ export default function ScheduleClient({
                   const laneIdx = li?.lane ?? 0;
                   const laneCount = li?.lanes ?? 1;
                   const widthPct = 100 / laneCount;
+                  const broken = isBroken(s, day.date); // you're taking a break over this slot
                   const isChosen = dayItin.chosenIds.has(s.id);
-                  // A favorite OR a strong discovery (fit ≥ HIGH_FIT) bumped by a conflict.
+                  // A favorite OR a strong discovery (fit ≥ HIGH_FIT) bumped by a
+                  // conflict — but a slot you deliberately broke over isn't "missing".
                   const isMissed =
-                    !isChosen && (s.tier !== "discovery" || s.fit >= HIGH_FIT);
+                    !isChosen && !broken && (s.tier !== "discovery" || s.fit >= HIGH_FIT);
                   const isLocked = lockSet.has(s.id);
                   const fos = friendsOnSet(s.id);
                   const color = TIER_COLOR[s.tier];
+                  const menuOpen = menuFor === s.id;
+                  const menuTop = Math.min(top, TIMELINE_H - 78);
                   return (
-                    <button
-                      key={s.id}
-                      onClick={() => toggleLock(s.id)}
-                      title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${fitLabel(s)}) — ${s.reason}\nClick to lock`}
-                      style={{
-                        position: "absolute", top, height, textAlign: "left", overflow: "hidden",
-                        left: `calc(${laneIdx * widthPct}% + 2px)`, width: `calc(${widthPct}% - 4px)`,
-                        borderRadius: 5, padding: "2px 5px", cursor: "pointer",
-                        background: isChosen ? color : "#1a1a22",
-                        color: isChosen ? "#06210f" : isMissed ? color : "#7a7a84",
-                        border: isLocked
-                          ? "2px solid #fff"
-                          : isChosen
-                            ? `1px solid ${color}`
-                            : isMissed
-                              ? `1.5px dashed ${color}`
-                              : "1px solid #26262f",
-                        opacity: isChosen ? 1 : isMissed ? 0.95 : 0.55,
-                        fontSize: "0.72rem", fontWeight: isChosen ? 700 : 500, lineHeight: 1.15,
-                      }}
-                    >
-                      {isLocked ? "🔒 " : ""}{s.artist}
-                      <span style={{ display: "block", fontWeight: 400, fontSize: "0.66rem", opacity: 0.85 }}>{fmt(s.start)} · {fitLabel(s)}</span>
-                      {fos.length > 0 && (
-                        <span style={{ position: "absolute", top: 3, right: 3, display: "flex", gap: 2 }}>
-                          {fos.map((fi) => (
-                            <span key={fi} title={friends[fi].name} style={{ width: 7, height: 7, borderRadius: "50%", background: friendColor(friends[fi], fi) }} />
-                          ))}
-                        </span>
+                    <div key={s.id}>
+                      <button
+                        onClick={() => setMenuFor(menuOpen ? null : s.id)}
+                        title={`${s.artist} · ${fmt(s.start)}–${fmt(s.end)} · ${TIER_LABEL[s.tier]} (${fitLabel(s)}) — ${s.reason}\nClick for options`}
+                        style={{
+                          position: "absolute", top, height, textAlign: "left", overflow: "hidden",
+                          left: `calc(${laneIdx * widthPct}% + 2px)`, width: `calc(${widthPct}% - 4px)`,
+                          borderRadius: 5, padding: "2px 5px", cursor: "pointer",
+                          background: isChosen ? color : "#1a1a22",
+                          color: isChosen ? "#06210f" : isMissed ? color : "#7a7a84",
+                          border: isLocked
+                            ? "2px solid #fff"
+                            : isChosen
+                              ? `1px solid ${color}`
+                              : isMissed
+                                ? `1.5px dashed ${color}`
+                                : "1px solid #26262f",
+                          opacity: broken ? 0.4 : isChosen ? 1 : isMissed ? 0.95 : 0.55,
+                          textDecoration: broken ? "line-through" : undefined,
+                          fontSize: "0.72rem", fontWeight: isChosen ? 700 : 500, lineHeight: 1.15,
+                        }}
+                      >
+                        {isLocked ? "🔒 " : ""}{s.artist}
+                        <span style={{ display: "block", fontWeight: 400, fontSize: "0.66rem", opacity: 0.85 }}>{fmt(s.start)} · {fitLabel(s)}</span>
+                        {fos.length > 0 && (
+                          <span style={{ position: "absolute", top: 3, right: 3, display: "flex", gap: 2 }}>
+                            {fos.map((fi) => (
+                              <span key={fi} title={friends[fi].name} style={{ width: 7, height: 7, borderRadius: "50%", background: friendColor(friends[fi], fi) }} />
+                            ))}
+                          </span>
+                        )}
+                      </button>
+                      {menuOpen && (
+                        <div style={{
+                          position: "absolute", top: menuTop, left: 2, right: 2, zIndex: 30,
+                          background: "#20202a", border: "1px solid #3a3a44", borderRadius: 8,
+                          padding: 4, display: "flex", flexDirection: "column", gap: 4,
+                          boxShadow: "0 6px 20px rgba(0,0,0,0.5)",
+                        }}>
+                          {broken ? (
+                            <button style={menuItem} onClick={() => { rejoin(s, day.date); setMenuFor(null); }}>↩︎ Rejoin — I&apos;ll come</button>
+                          ) : (
+                            <>
+                              <button style={menuItem} onClick={() => { if (isLocked) unlock(s.id); else lockIn(s, day.date); setMenuFor(null); }}>
+                                {isLocked ? "🔓 Unlock" : "🔒 Lock in"}
+                              </button>
+                              <button style={menuItem} onClick={() => { takeBreak(s, day.date); setMenuFor(null); }}>☕ Take a break here</button>
+                            </>
+                          )}
+                        </div>
                       )}
-                    </button>
+                    </div>
                   );
                 });
               })()}
@@ -668,6 +759,10 @@ const panel: React.CSSProperties = {
   padding: "0.85rem 1.1rem", marginBottom: "1rem",
 };
 const summary: React.CSSProperties = { cursor: "pointer", fontWeight: 600, color: "#f5f5f7" };
+const menuItem: React.CSSProperties = {
+  background: "transparent", border: "none", color: "#f5f5f7", textAlign: "left",
+  padding: "0.4rem 0.5rem", borderRadius: 5, cursor: "pointer", fontSize: "0.78rem", whiteSpace: "nowrap",
+};
 const input: React.CSSProperties = {
   background: "#0f0f14", border: "1px solid #26262f", borderRadius: 8,
   padding: "0.5rem 0.7rem", color: "#f5f5f7", fontSize: "0.9rem",

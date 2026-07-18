@@ -44,15 +44,30 @@ function transitionPenalty(prev: PlannableSet, next: PlannableSet): number {
   return Math.min(next.score, next.score * (shortfall / setLen));
 }
 
+// A break is a "take a break" window (all stages). The optimizer schedules
+// nothing overlapping it, leaving a genuine gap — and because the DP only ever
+// maximizes, removing options here can never cram extra acts into the rest of
+// the day, so your other picks stay put around the break.
+export type BreakWindow = { start: string; end: string };
+
 export function optimizeDay(
   allSets: PlannableSet[],
   lockedIds: string[] = [],
+  breakWindows: BreakWindow[] = [],
 ): ItineraryEntry[] {
   const locked = new Set(lockedIds);
 
+  // Drop anything overlapping a break up front — breaks win over everything,
+  // including a stale lock that happens to fall inside one.
+  const overlapsBreak = (x: PlannableSet) =>
+    breakWindows.some(
+      (b) => minutes(x.start) < minutes(b.end) && minutes(x.end) > minutes(b.start),
+    );
+  const avail = allSets.filter((x) => !overlapsBreak(x));
+
   // Locked picks are mandatory: drop any other set that time-overlaps a lock,
   // then give locks an overwhelming score so the DP always selects them.
-  const lockedSets = allSets.filter((x) => locked.has(x.id));
+  const lockedSets = avail.filter((x) => locked.has(x.id));
   const overlapsLock = (x: PlannableSet) =>
     lockedSets.some(
       (l) =>
@@ -60,7 +75,7 @@ export function optimizeDay(
         minutes(x.start) < minutes(l.end) &&
         minutes(x.end) > minutes(l.start),
     );
-  const sets = allSets.filter((x) => locked.has(x.id) || !overlapsLock(x));
+  const sets = avail.filter((x) => locked.has(x.id) || !overlapsLock(x));
   const LOCK_BONUS = 1e6;
   const eff = (x: PlannableSet) => x.score + (locked.has(x.id) ? LOCK_BONUS : 0);
 
@@ -109,7 +124,7 @@ export function optimizeDay(
 
   // For each chosen set, note the best alternatives we passed up at that time.
   return chosen.map((c) => {
-    const overlap = allSets
+    const overlap = avail
       .filter(
         (o) =>
           o.id !== c.id &&
