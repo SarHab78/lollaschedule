@@ -5,11 +5,24 @@ import { useRouter } from "next/navigation";
 
 export type PickArtist = { name: string; image: string | null };
 
-export default function PickClient({ artists }: { artists: PickArtist[] }) {
+export default function PickClient({
+  artists,
+  initialSelected = [],
+  initialOthers = [],
+  accountEmail = null,
+  canSignIn = false,
+}: {
+  artists: PickArtist[];
+  initialSelected?: string[];
+  initialOthers?: string[];
+  accountEmail?: string | null;
+  canSignIn?: boolean;
+}) {
   const router = useRouter();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const returning = initialSelected.length + initialOthers.length > 0;
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelected));
   const [query, setQuery] = useState("");
-  const [others, setOthers] = useState("");
+  const [others, setOthers] = useState(initialOthers.join(", "));
   const [submitting, setSubmitting] = useState(false);
 
   const toggle = (name: string) =>
@@ -53,11 +66,29 @@ export default function PickClient({ artists }: { artists: PickArtist[] }) {
   return (
     <main style={{ maxWidth: 1000, paddingBottom: 96 }}>
       <h1>Pick your artists 🎸</h1>
-      <p className="subtitle">
-        Tap <strong>every</strong> artist you recognize and like — the more you pick, the better
-        your schedule matches your real taste, so don&apos;t hold back. We&apos;ll build your Lolla
-        2026 schedule and surface others on the lineup you&apos;d dig. No login, about a minute.
-      </p>
+      {returning ? (
+        <p className="subtitle">
+          Welcome back — your picks are saved and loaded below. Tweak them if you like, or just hit{" "}
+          <strong>Build my schedule</strong> again. Adding more artists only sharpens it.
+        </p>
+      ) : (
+        <p className="subtitle">
+          Tap <strong>every</strong> artist you recognize and like — the more you pick, the better
+          your schedule matches your real taste, so don&apos;t hold back. We&apos;ll build your Lolla
+          2026 schedule and surface others on the lineup you&apos;d dig. No login, about a minute.
+        </p>
+      )}
+
+      {accountEmail ? (
+        <p style={{ fontSize: "0.82rem", color: "#1db954", marginTop: "-0.4rem", marginBottom: "1rem" }}>
+          ✓ Signed in as {accountEmail} — picks save to your account, on any device.
+        </p>
+      ) : canSignIn ? (
+        <p style={{ fontSize: "0.82rem", color: "#8a8a94", marginTop: "-0.4rem", marginBottom: "1rem" }}>
+          Picks save on this device.{" "}
+          <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> to keep them across devices.
+        </p>
+      ) : null}
 
       <input
         value={query}
@@ -115,7 +146,7 @@ export default function PickClient({ artists }: { artists: PickArtist[] }) {
         )}
       </div>
 
-      <details style={{ background: "#1a1a22", border: "1px solid #26262f", borderRadius: 10, padding: "0.85rem 1.1rem", marginBottom: "1rem" }}>
+      <details open={initialOthers.length > 0} style={{ background: "#1a1a22", border: "1px solid #26262f", borderRadius: 10, padding: "0.85rem 1.1rem", marginBottom: "1rem" }}>
         <summary style={{ cursor: "pointer", fontWeight: 600 }}>
           + Add favorites who aren&apos;t playing (optional — sharpens discovery)
         </summary>

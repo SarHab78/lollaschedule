@@ -11,7 +11,7 @@ import {
 } from "@/lib/taste";
 import { enrichArtists, cachedArtists, ArtistMeta } from "@/lib/enrich";
 import { getMe } from "@/lib/spotify";
-import { kvGet } from "@/lib/kv";
+import { loadManualPicks } from "@/lib/manual";
 import { getLineup, uniqueArtists } from "@/lib/lineup";
 import { scoreArtist } from "@/lib/scoring";
 import { predictFits } from "@/lib/predict";
@@ -45,17 +45,17 @@ function parseOptions(sp: { window?: string; sources?: string }): TasteOptions {
 export default async function Schedule({ searchParams }: Props) {
   const jar = await cookies();
   const token = jar.get("spotify_access_token")?.value;
-  const manualId = jar.get("manual_id")?.value;
 
   const options = parseOptions(await searchParams);
   const lineup = getLineup();
   const artists = uniqueArtists();
 
   // Two taste sources: Spotify (the 25 allowlisted) or the manual pick flow
-  // (anyone). The rest of the pipeline is identical.
+  // (anyone — anonymous cookie or signed-in email account). The rest of the
+  // pipeline is identical.
   let taste: TasteProfile;
   let meta: Map<string, ArtistMeta>;
-  const manualMode = !token && !!manualId;
+  const manualMode = !token;
 
   if (token) {
     // Spotify's rate limit is app-wide; a fetch can 429. Fail gracefully to a
@@ -68,13 +68,11 @@ export default async function Schedule({ searchParams }: Props) {
       const msg = e instanceof Error ? e.message : "";
       redirect(`/?error=${msg.includes("429") ? "spotify_busy" : "spotify_failed"}`);
     }
-  } else if (manualId) {
-    const loved = (await kvGet<string[]>(`manual:${manualId}`)) ?? [];
+  } else {
+    const loved = await loadManualPicks(); // account key or cookie, with migration
     if (loved.length === 0) redirect("/pick");
     taste = buildManualProfile(loved);
     meta = cachedArtists(artists); // images only, no Spotify needed
-  } else {
-    redirect("/?error=not_logged_in");
   }
 
   // AI discovery: artists you don't directly listen to (would-be discoveries)

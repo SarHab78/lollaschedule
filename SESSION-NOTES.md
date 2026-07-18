@@ -1,3 +1,81 @@
+# Session notes — 2026-07-17
+
+Email accounts are now **LIVE locally**. Created the dedicated sender
+`lollaschedule@gmail.com`, enabled 2FA + generated a Gmail app password, filled
+`GMAIL_USER`/`GMAIL_APP_PASSWORD` in `.env.local` (`AUTH_SECRET` was already set).
+Verified SMTP auth, sent a test email (landed in inbox, NOT spam), and ran the
+full `/account` → email → 6-digit code → session → `/pick`/`/schedule` loop
+end-to-end in the browser — works. Typecheck clean. Committing the whole
+manual-picks + accounts feature set now.
+- **STILL TODO (👤 Sarah):** add `AUTH_SECRET`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`
+  to **Vercel** env (Production) + redeploy — until then accounts are local-only
+  and prod keeps cookie-only persistence (graceful).
+
+---
+
+# Session notes — 2026-07-15
+
+Quick handoff for the next session. See CLAUDE.md (architecture) and SCALING.md
+(distribution plan) for the longer picture. Older notes are below this section.
+
+## What we did this session
+
+### Manual picks now persist (durable, per device)
+- `/pick/save` TTL 24h → **1 year**, and it **reuses the existing `manual_id`**
+  cookie instead of minting a new id each save (stable identity).
+- `/pick` **re-hydrates** on return: pre-checks saved lineup picks in the grid,
+  pre-fills off-lineup free-text, shows a "Welcome back" note.
+- Landing page: returning manual visitor gets a **"View my schedule (N artists) →"**
+  shortcut so they skip re-picking.
+- Confirmed with Sarah: Upstash vars ARE in Vercel now, so prod KV is durable
+  (SESSION-NOTES/SCALING earlier said this was a TODO — it's done). Updated
+  SCALING.md accordingly.
+
+### Optional email accounts — 6-digit code (BUILT, typechecks clean, DORMANT)
+Cross-device persistence beyond the per-device cookie. **Custom lightweight OTP,
+no Auth.js, no DB** — reuses Upstash + an HMAC-signed cookie. Decisions locked
+with Sarah: email 6-digit **code** (Partiful-style, not a magic link); **Gmail
+SMTP now, transport-agnostic** so we can swap to Resend/SES if it goes viral;
+accounts **optional** (Spotify / cookie / email all coexist).
+- New files: `lib/session.ts` (signed cookie holding email), `lib/mailer.ts`
+  (Gmail SMTP, swappable), `lib/otp.ts` (code gen/hash/verify: 10-min TTL, max 5
+  wrong tries, send throttle), `lib/manual.ts` (identity → KV key + **lazy
+  migration** of cookie picks into the account on first sign-in).
+- Routes: `app/api/auth/{request,verify,signout}/route.ts`.
+- UI: `app/account/{page,AccountClient}.tsx` (email → code, 2-step),
+  `app/SignOutButton.tsx`. Wired into `/pick`, `/schedule`, landing.
+- Keys: signed-in → `manual:user:<email>`; anonymous → `manual:<uuid>` cookie.
+- New dep: `nodemailer` (+ `@types/nodemailer`). No Auth.js installed.
+
+### ⚠️ TO TURN ACCOUNTS ON (Sarah — required before it does anything)
+Right now `GMAIL_USER`/`GMAIL_APP_PASSWORD` are **blank**, so `mailerEnabled()`
+is false → the sign-in UI is hidden and cookie-only persistence works. To enable:
+1. Pick/create a sender Gmail (recommend a dedicated `lollaschedule@gmail.com`).
+2. Turn on **2-Step Verification**, then generate an **app password** at
+   myaccount.google.com/apppasswords (16 chars, NOT the login password).
+3. Fill the two blank lines in `.env.local` (`AUTH_SECRET` already generated there):
+   `GMAIL_USER=…@gmail.com` and `GMAIL_APP_PASSWORD=<16-char>`.
+4. Add all three (`AUTH_SECRET`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`) to **Vercel**
+   env + redeploy.
+5. Restart dev server, go to `/account`, run the full email→code→schedule loop.
+
+### Notes / gotchas for accounts
+- Gmail free cap ≈ **500 emails/day** (= 500 sign-ins/day). Fine for friends. To
+  scale past it: add a Resend/SES branch in `lib/mailer.ts` keyed on a new env
+  var + a verified domain — nothing else changes (built for this).
+- Brand-new Gmail sender has zero reputation → first codes may hit spam; at
+  friends-scale (known contacts) it self-corrects.
+- All new code **degrades gracefully** with creds unset — safe to commit/deploy
+  before Gmail is set up.
+
+### Uncommitted
+- Everything above is **written + typechecks clean but NOT committed**. Sarah
+  wanted to exit here. Next session: (optionally) test locally after adding Gmail
+  creds, then commit + push. Suggested commit split is fine as one commit:
+  "Persist manual picks (1yr) + optional email 6-digit-code accounts".
+
+---
+
 # Session notes — 2026-06-30
 
 Quick handoff for the next session. See CLAUDE.md (architecture) and SCALING.md

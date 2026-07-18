@@ -1,7 +1,21 @@
+import { cookies } from "next/headers";
+import { loadManualPicks } from "@/lib/manual";
+import { getSessionEmail } from "@/lib/session";
+import { mailerEnabled } from "@/lib/mailer";
+import SignOutButton from "./SignOutButton";
+
 type Props = { searchParams: Promise<{ error?: string }> };
 
 export default async function Home({ searchParams }: Props) {
   const { error } = await searchParams;
+
+  // Returning manual visitor with saved picks (cookie or account)? Offer a
+  // straight shot back to their schedule so they never have to re-select.
+  const jar = await cookies();
+  const hasSpotify = !!jar.get("spotify_access_token")?.value;
+  const [savedPicks, accountEmail] = await Promise.all([loadManualPicks(), getSessionEmail()]);
+  const returning = !hasSpotify && savedPicks.length > 0;
+  const canSignIn = mailerEnabled() && !!process.env.AUTH_SECRET;
 
   return (
     <main>
@@ -28,17 +42,54 @@ export default async function Home({ searchParams }: Props) {
         </div>
       ) : null}
 
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-        <a className="btn" href="/login">
-          Connect Spotify
-        </a>
-        <a className="btn" href="/pick" style={{ background: "#26262f" }}>
-          Pick your artists (no login)
-        </a>
-      </div>
-      <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
-        No Spotify? Just tap the lineup artists you love — takes under a minute.
-      </p>
+      {returning ? (
+        <>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+            <a className="btn" href="/schedule">
+              View my schedule ({savedPicks.length} artists) →
+            </a>
+            <a className="btn" href="/pick" style={{ background: "#26262f" }}>
+              Edit my picks
+            </a>
+          </div>
+          {accountEmail ? (
+            <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
+              Signed in as {accountEmail} — your picks follow you on any device.{" "}
+              <SignOutButton />
+            </p>
+          ) : (
+            <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
+              Picks saved on this device.{" "}
+              {canSignIn && (
+                <>
+                  <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a> to keep them across devices.{" "}
+                </>
+              )}
+              Have Spotify? <a href="/login" style={{ color: "#1db954" }}>Connect it</a> for an auto-built schedule.
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+            <a className="btn" href="/login">
+              Connect Spotify
+            </a>
+            <a className="btn" href="/pick" style={{ background: "#26262f" }}>
+              Pick your artists (no login)
+            </a>
+          </div>
+          <p className="subtitle" style={{ fontSize: "0.85rem", marginTop: "0.75rem" }}>
+            No Spotify? Just tap the lineup artists you love — takes under a minute.
+            {canSignIn && (
+              <>
+                {" "}Want your picks on every device?{" "}
+                <a href="/account" style={{ color: "#1db954" }}>Sign in with email</a>.
+              </>
+            )}
+          </p>
+        </>
+      )}
     </main>
   );
 }

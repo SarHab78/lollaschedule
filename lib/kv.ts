@@ -40,3 +40,40 @@ export async function kvSet(key: string, value: unknown, ttlSeconds: number): Pr
   }
   mem.set(key, { value, exp: Date.now() + ttlSeconds * 1000 });
 }
+
+export async function kvDel(key: string): Promise<void> {
+  if (redis) {
+    try {
+      await redis.del(key);
+    } catch (e) {
+      console.log("[kv] del failed:", e instanceof Error ? e.message : e);
+    }
+    return;
+  }
+  mem.delete(key);
+}
+
+// Atomic counter with a TTL window (for rate limiting). Returns the new count;
+// the TTL is set only when the counter is first created so the window is fixed.
+// Returns 0 on a Redis error so KV hiccups never block a legit sign-in.
+export async function kvIncr(key: string, ttlSeconds: number): Promise<number> {
+  if (redis) {
+    try {
+      const n = await redis.incr(key);
+      if (n === 1) await redis.expire(key, ttlSeconds);
+      return n;
+    } catch (e) {
+      console.log("[kv] incr failed:", e instanceof Error ? e.message : e);
+      return 0;
+    }
+  }
+  const now = Date.now();
+  const hit = mem.get(key);
+  if (!hit || (hit.exp && now > hit.exp)) {
+    mem.set(key, { value: 1, exp: now + ttlSeconds * 1000 });
+    return 1;
+  }
+  const n = (hit.value as number) + 1;
+  hit.value = n;
+  return n;
+}

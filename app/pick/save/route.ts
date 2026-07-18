@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { kvSet } from "@/lib/kv";
+import { getSessionEmail } from "@/lib/session";
+import { MANUAL_TTL, MANUAL_COOKIE, accountKey, cookieKey } from "@/lib/manual";
 
-// Stash the manually-picked artists in KV under a random id, and drop that id in
-// a cookie. /schedule reads it back. Keeps the (potentially long) name list out
-// of the cookie entirely. 24h TTL.
+// Stash the manually-picked artists in KV. Signed-in visitors save to their
+// account key (email → cross-device); anonymous visitors save under a stable
+// cookie id (per-device). /schedule reads it back and /pick re-hydrates the
+// checkboxes on return. Long-lived so nobody re-picks every time.
 export async function POST(req: NextRequest) {
   let names: unknown;
   try {
@@ -17,15 +20,24 @@ export async function POST(req: NextRequest) {
   }
   const clean = names.filter((n): n is string => typeof n === "string" && n.trim().length > 0).slice(0, 300);
 
-  const id = crypto.randomUUID();
-  await kvSet(`manual:${id}`, clean, 60 * 60 * 24);
+  // Signed in → save to the account (no cookie needed, works on any device).
+  const email = await getSessionEmail();
+  if (email) {
+    await kvSet(accountKey(email), clean, MANUAL_TTL);
+    return NextResponse.json({ ok: true });
+  }
+
+  // Anonymous → reuse the visitor's existing cookie id if present (re-saving
+  // overwrites under the same key); otherwise mint a fresh one.
+  const id = req.cookies.get(MANUAL_COOKIE)?.value || crypto.randomUUID();
+  await kvSet(cookieKey(id), clean, MANUAL_TTL);
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set("manual_id", id, {
+  res.cookies.set(MANUAL_COOKIE, id, {
     httpOnly: true,
     secure: req.headers.get("x-forwarded-proto") === "https",
     path: "/",
-    maxAge: 60 * 60 * 24,
+    maxAge: MANUAL_TTL,
     sameSite: "lax",
   });
   return res;
