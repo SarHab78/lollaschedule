@@ -36,8 +36,9 @@
     "spotifyId": "4Z8MrrKMBHMPa8d04Ivur8",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/15f02c5e597735ead499bf898e9828df/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/7f369b774a175523390a4746cf4e3f68/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 338703121
   },
   "BETWEEN FRIENDS": {
     "name": "BETWEEN FRIENDS",
@@ -324,24 +325,26 @@
     "spotifyId": "6HYVC0sJVnVnsVmuH0Ofre",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/2e377829720652ce7356d1d6f4970562/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": null,
+    "imageSource": null
   },
   "54 ULTRA": {
     "name": "54 ULTRA",
     "spotifyId": "392WuM1Yb4QRI0GG4epyn5",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/f26cfe08d1548d9f27358dedffa4403d/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/1983dc5f5feacb51ed68c236dee58d92/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 99342912
   },
   "AVELLO": {
     "name": "AVELLO",
     "spotifyId": "1ZR5GnPw0Jkb5M4hnBwzuZ",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/965941bece3c76d690960a82a290b63d/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/02ce9558318d0acc86347d2a50a68f89/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 6494273
   },
   "BALU BRIGADA": {
     "name": "BALU BRIGADA",
@@ -580,16 +583,18 @@
     "spotifyId": "70KxgbZNsd9xOttXW67mh3",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/58941274c601af5460cf6f37500637fc/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/e4fea21ff4ee9ea0982fc5508393d76e/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 298214371
   },
   "ROZ": {
     "name": "ROZ",
     "spotifyId": "4c4aEmXU6Hx95REbIZ3S82",
     "genres": [],
     "popularity": 0,
-    "image": null,
-    "imageSource": null
+    "image": "https://cdn-images.dzcdn.net/images/artist/700c27a0651b48653a839f54448fd8c5/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 85174192
   },
   "SIDEPIECE": {
     "name": "SIDEPIECE",
@@ -620,8 +625,9 @@
     "spotifyId": "5cb5ljWIIrvUxokdf2vl6A",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/1eb505625a95c26162b7a0fa4456aaea/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/ce2c51c233e22e306de56b42bfbbf678/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 286866371
   },
   "THE SMASHING PUMPKINS": {
     "name": "THE SMASHING PUMPKINS",
@@ -652,8 +658,9 @@
     "spotifyId": "5cb5ljWIIrvUxokdf2vl6A",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/26f27001dc1fb74970b0711d61117622/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/abc9401ec81caec76d874d1e64fe461b/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 313073741
   },
   "YUNGBLUD": {
     "name": "YUNGBLUD",
@@ -708,8 +715,9 @@
     "spotifyId": "5TwUXL3I6RaLckHy8le2Hq",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/a4ec77bc929e21fbd436a00d853cb068/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/dba5f4faa04cdd9815fef4254c5b0c4d/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 162495607
   },
   "CAMERON WHITCOMB": {
     "name": "CAMERON WHITCOMB",
@@ -812,8 +820,9 @@
     "spotifyId": "392WuM1Yb4QRI0GG4epyn5",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/c88f72e86af8fa8d8e59584e9251dd0a/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/4e734d075f5a65f1cf3ee87494f59b4e/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 85041852
   },
   "INK": {
     "name": "INK",
@@ -868,8 +877,9 @@
     "spotifyId": "0nnBZ8FXWjG9wZgM2cpfeb",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/f725fdb50c1a3e2c221bb84746c139f9/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/3c13469bb27fb3bf3facc945404addf5/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 85065212
   },
   "LUCY BEDROQUE": {
     "name": "LUCY BEDROQUE",
@@ -916,8 +926,9 @@
     "spotifyId": "4qU7IJSReZnsLy5907Mtau",
     "genres": [],
     "popularity": 0,
-    "image": null,
-    "imageSource": null
+    "image": "https://cdn-images.dzcdn.net/images/artist/af446216495938fd61680009ab5b2442/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 396390291
   },
   "OLIVIA DEAN": {
     "name": "OLIVIA DEAN",
@@ -956,8 +967,9 @@
     "spotifyId": "6a84XW6PjSgibLahMxGxxw",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/e351ddc272bde363a88499cbf3ef776a/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/cfb6ec868591aba4e67894e30351289a/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 239094351
   },
   "SIENNA SPIRO": {
     "name": "SIENNA SPIRO",
@@ -1028,8 +1040,9 @@
     "spotifyId": "2qanRMyA5bNuTvz1dK45OP",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/bdedf63fde685c1129a2a87155bc9ac9/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/e1fff1a95a6c7058a74b3c07b35c0042/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 306607671
   },
   "ADO": {
     "name": "ADO",
@@ -1092,16 +1105,18 @@
     "spotifyId": "5WF5jtgP0H31QTl5g4WxW9",
     "genres": [],
     "popularity": 0,
-    "image": null,
-    "imageSource": null
+    "image": "https://cdn-images.dzcdn.net/images/artist/45b519eb098c4374ae3cbaf2d033d39e/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 171817627
   },
   "DESTIN CONRAD": {
     "name": "DESTIN CONRAD",
     "spotifyId": "24b0qNYNgeOfpP5rbljIB3",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/1f0a6a8004f205dd21177d4d44d9a3e3/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/d28179329351372467746a9fae577b31/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 5700709
   },
   "DOMBRESKY": {
     "name": "DOMBRESKY",
@@ -1252,16 +1267,18 @@
     "spotifyId": "0qpBGpYogdqtCqzQaRtyaw",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/addfca3b309c6ea81ad769b448f00cca/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/7d798c83f306b015f749ed255a851027/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 379297431
   },
   "SURFING FOR DAISY": {
     "name": "SURFING FOR DAISY",
     "spotifyId": "1UfzhwcOR4yfX7yHTPfC9m",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/81a6037ec1161735b6f1aa2d049a300b/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/6c1042db1b8e6a9bbf3ebea6a2e15d9c/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 214882885
   },
   "TATE MCRAE": {
     "name": "TATE MCRAE",
@@ -1364,8 +1381,9 @@
     "spotifyId": "6mEQK9m2krja6X1cfsAjfl",
     "genres": [],
     "popularity": 0,
-    "image": "https://cdn-images.dzcdn.net/images/artist/bd5119caee0a766cc54a7d8aeb0853d5/500x500-000000-80-0-0.jpg",
-    "imageSource": "deezer"
+    "image": "https://cdn-images.dzcdn.net/images/artist/2cbfaf626a591e162bfcc2b4b0214217/500x500-000000-80-0-0.jpg",
+    "imageSource": "deezer",
+    "deezerId": 108153772
   },
   "ZACK MARTINO": {
     "name": "ZACK MARTINO",
