@@ -111,6 +111,13 @@ before the next set starts (uses `data/stage-distances.json`).
 - **Spotify Development Mode:** the app only lets allowlisted accounts log in (25
   max). Add users at dashboard → app → Settings → User Management. Symptom if
   missing: "user not registered" on login.
+- **Never run `npm run build` while `npm run dev` is running.** They share the
+  `.next` directory, so the production build swaps out the chunks the running dev
+  server has loaded. The browser then shows `Runtime TypeError: Cannot read
+  properties of undefined (reading 'call')` and the server log says `Could not
+  find the module ... in the React Client Manifest` — on *every* page, including
+  ones you never touched, which makes it look like a code bug. Cure: stop dev,
+  `rm -rf .next`, restart. (Hit this on 2026-07-19.)
 - Middleware was tried for the localhost redirect and removed — Next normalizes
   the Location header back to a relative path, so it can't move hosts. Use the
   client-side guard instead.
