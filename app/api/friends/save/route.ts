@@ -11,6 +11,7 @@ const MAX_NAME_LEN = 80;
 const MAX_IDS = 300;
 const SET_ID = /^set-\d+$/;
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
+const SLUG = /^[A-Za-z0-9_-]{12}$/; // live-link slug (see lib/sharelink.ts)
 
 function sanitize(input: unknown): StoredFriend[] | null {
   if (!Array.isArray(input)) return null;
@@ -31,7 +32,9 @@ function sanitize(input: unknown): StoredFriend[] | null {
       typeof f?.name === "string" && f.name.trim() ? f.name.trim().slice(0, MAX_NAME_LEN) : "Friend";
     const color = typeof f?.color === "string" && HEX.test(f.color) ? f.color : undefined;
     const enabled = typeof f?.enabled === "boolean" ? f.enabled : undefined;
-    out.push({ name, ids, color, enabled });
+    // A live-link friend also stores the slug so their picks can be refreshed.
+    const slug = typeof f?.slug === "string" && SLUG.test(f.slug) ? f.slug : undefined;
+    out.push({ name, ids, color, enabled, slug });
   }
   return out;
 }

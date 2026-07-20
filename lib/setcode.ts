@@ -77,6 +77,17 @@ export function decodeSets(code: string): string[] {
 }
 
 /**
+ * Pull the LIVE-link slug out of a pasted `/share/<slug>` URL, or null if this
+ * isn't a live link. Only the path form is accepted: a bare 12-char string is
+ * indistinguishable from a short stateless `?s=` code, so treating one as a slug
+ * would misread snapshot links. Callers resolve the slug via /api/share/resolve.
+ */
+export function parseShareSlug(raw: string): string | null {
+  const m = /\/share\/([A-Za-z0-9_-]{12})(?:[/?#]|$)/.exec((raw ?? "").trim());
+  return m ? m[1] : null;
+}
+
+/**
  * Read the set ids out of anything a user might paste: a full share URL, a bare
  * query string, or just the code. Accepts the new compact `?s=<code>` form AND
  * the legacy `?sets=id1,id2,...` CSV so links shared before this change still

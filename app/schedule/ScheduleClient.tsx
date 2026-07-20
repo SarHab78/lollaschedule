@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { optimizeDay, PlannableSet, BreakWindow } from "@/lib/optimizer";
 import { buildIcs, IcsSet } from "@/lib/ics";
-import { encodeSets, parseSharePayload } from "@/lib/setcode";
+import { encodeSets, parseSharePayload, parseShareSlug } from "@/lib/setcode";
 import type { Tier } from "@/lib/scoring";
 import type { TasteOptions, TimeWindow } from "@/lib/taste";
 
@@ -24,7 +24,18 @@ export type UISet = {
 export type DayData = { date: string; label: string; sets: UISet[] };
 // color/enabled are optional so friends saved before this change still load:
 // color backfills from the palette by position, enabled defaults to visible.
-type Friend = { name: string; ids: string[]; color?: string; enabled?: boolean };
+// `slug` is present when they shared a LIVE link — we re-resolve it on every
+// load so their edits show up here, with `ids` kept as the last-known fallback.
+// `dead` is client-only (recomputed each load, never persisted server-side):
+// their live link was turned off, so their picks are frozen at what we last saw.
+type Friend = {
+  name: string;
+  ids: string[];
+  color?: string;
+  enabled?: boolean;
+  slug?: string;
+  dead?: boolean;
+};
 
 // Kept local (not imported from taste.ts) so the Node-only deps in that module
 // don't get pulled into the client bundle.
@@ -200,6 +211,17 @@ export default function ScheduleClient({
     { picks: true, discoveries: true },
   );
   const [shareOpen, setShareOpen] = useState(false); // share dropdown open?
+  // The live link's slug, once published. Persisted so the same link is reused
+  // across reloads instead of minting a new one every session — a link you've
+  // already sent people has to keep being *your* link.
+  const [liveSlug, setLiveSlug] = usePersisted<string | null>("lolla_live_slug", null);
+  const [shareBusy, setShareBusy] = useState(false);
+  // Live-link publishing is best-effort: if KV is down we silently fall back to
+  // the stateless ?s= snapshot rather than handing out a URL that would 404.
+  const [liveFailed, setLiveFailed] = useState(false);
+  // Signature of the pick list last written to the live link, so auto-sync only
+  // fires on real changes.
+  const lastSynced = useRef<string | null>(null);
   // "Take a break" windows, keyed by day date. One break = one act's slot the
   // user skipped; the optimizer leaves that all-stages window empty.
   type Break = { date: string; start: string; end: string };
@@ -326,9 +348,57 @@ export default function ScheduleClient({
     a.click();
     URL.revokeObjectURL(url);
   };
+  // ---- live share link ----
+  // The link is a stable /share/<slug> URL backed by KV, so it keeps showing
+  // your CURRENT plan after you send it. Publishing is lazy — nothing is stored
+  // until you actually open the share menu — and it degrades to the old
+  // stateless ?s= snapshot if the write fails, so sharing never hard-breaks.
+  const shareIds = useMemo(() => shareSets.map((s) => s.id), [shareSets]);
+  const staticLink = () =>
+    `${location.origin}/share?s=${encodeSets(shareIds)}`;
+
+  const publish = useCallback(
+    async (ids: string[], slug: string | null): Promise<string | null> => {
+      if (ids.length === 0) return null;
+      try {
+        const res = await fetch("/api/share/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids, slug: slug ?? undefined }),
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as { slug?: string };
+        return typeof data.slug === "string" ? data.slug : null;
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
+  // Publish when the share menu opens rather than when Copy is clicked, so the
+  // URL is already known at click time. (Awaiting a network round-trip inside
+  // the click handler makes Safari drop the clipboard permission.)
+  const ensureLiveLink = useCallback(async () => {
+    if (liveSlug || shareIds.length === 0 || shareBusy) return;
+    setShareBusy(true);
+    const slug = await publish(shareIds, null);
+    if (slug) {
+      // Record what we just wrote so auto-sync doesn't immediately re-post it.
+      lastSynced.current = shareIds.join(",");
+      setLiveSlug(slug);
+      setLiveFailed(false);
+    } else {
+      setLiveFailed(true);
+    }
+    setShareBusy(false);
+    // setLiveSlug is a stable setState wrapper; excluded intentionally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveSlug, shareIds, shareBusy, publish]);
+
   const copyShare = async () => {
     if (shareSets.length === 0) return;
-    const link = `${location.origin}/share?s=${encodeSets(shareSets.map((s) => s.id))}`;
+    const link = liveSlug ? `${location.origin}/share/${liveSlug}` : staticLink();
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
@@ -338,30 +408,166 @@ export default function ScheduleClient({
     }
   };
 
+  // Turn the link off everywhere it was ever pasted. A live link needs this
+  // escape hatch: without it a URL you sent once would publish your plan forever.
+  const stopSharing = async () => {
+    const slug = liveSlug;
+    if (!slug) return;
+    setShareBusy(true);
+    try {
+      await fetch("/api/share/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+    } catch {
+      /* best-effort — clearing it locally is what stops us re-publishing */
+    }
+    setLiveSlug(null);
+    setLiveFailed(false);
+    setShareBusy(false);
+  };
+
+  // Auto-sync. Once a live link exists, every change to what you're sharing —
+  // locks, breaks, the 🔥/🔮 scope toggles, a re-score — writes through to it,
+  // debounced so a burst of clicks is one request (same pattern as friends sync).
+  useEffect(() => {
+    if (!liveSlug || shareIds.length === 0) return; // never blank out a live link
+    const sig = shareIds.join(",");
+    if (lastSynced.current === sig) return;
+    const t = setTimeout(() => {
+      lastSynced.current = sig;
+      publish(shareIds, liveSlug).then((slug) => {
+        // The server re-mints if our slug is unknown to it (revoked elsewhere,
+        // expired); adopt whatever came back so we stay in sync with storage.
+        if (slug && slug !== liveSlug) setLiveSlug(slug);
+        if (!slug) lastSynced.current = null; // failed — retry on the next change
+      });
+    }, 600);
+    return () => clearTimeout(t);
+    // setLiveSlug is a stable setState wrapper; excluded intentionally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveSlug, shareIds, publish]);
+
   // ---- friends ----
   // Each friend's dot color, stable for the life of the friend (stored on add;
   // backfilled by position for friends saved before colors were persisted).
   const friendColor = (f: Friend, i: number) => f.color ?? FRIEND_COLORS[i % FRIEND_COLORS.length];
   const isFriendOn = (f: Friend) => f.enabled !== false; // undefined (legacy) = visible
 
-  const addFriend = () => {
-    const ids = parseSharePayload(friendLink).filter((x) => validIds.has(x));
-    if (ids.length === 0) {
-      alert("Couldn't find any valid sets in that link.");
+  const addFriend = async () => {
+    // A live link (/share/<slug>) is resolved through the API so we learn their
+    // CURRENT picks and can refresh them later; a stateless ?s= link decodes
+    // locally as before. Both are accepted — friends may send either.
+    const slug = parseShareSlug(friendLink);
+    let ids: string[];
+    if (slug) {
+      try {
+        const res = await fetch("/api/share/resolve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slugs: [slug] }),
+        });
+        const data = res.ok
+          ? ((await res.json()) as { results?: Record<string, { ids?: string[] } | null> })
+          : null;
+        ids = (data?.results?.[slug]?.ids ?? []).filter((x) => validIds.has(x));
+      } catch {
+        ids = [];
+      }
+      if (ids.length === 0) {
+        alert("That link isn't active anymore — ask them for a fresh one.");
+        return;
+      }
+    } else {
+      ids = parseSharePayload(friendLink).filter((x) => validIds.has(x));
+      if (ids.length === 0) {
+        alert("Couldn't find any valid sets in that link.");
+        return;
+      }
+    }
+    // A live link is a stable identity for one person, so re-pasting the same
+    // one refreshes that friend instead of adding a duplicate row (which is easy
+    // to do now that a link keeps working indefinitely).
+    const dupeIdx = slug ? friends.findIndex((f) => f.slug === slug) : -1;
+    if (dupeIdx >= 0) {
+      const typed = friendName.trim();
+      setFriends((p) =>
+        p.map((f, i) => (i === dupeIdx ? { ...f, ids, dead: false, name: typed || f.name } : f)),
+      );
+      setFriendName("");
+      setFriendLink("");
       return;
     }
+
     const name = friendName.trim() || `Friend ${friends.length + 1}`;
     // Prefer a palette color no current friend is using, so new links get a
     // visibly different dot; fall back to cycling once the palette is exhausted.
     const used = new Set(friends.map((f, i) => friendColor(f, i)));
     const color = FRIEND_COLORS.find((c) => !used.has(c)) ?? FRIEND_COLORS[friends.length % FRIEND_COLORS.length];
-    setFriends((p) => [...p, { name, ids, color, enabled: true }]);
+    setFriends((p) => [...p, { name, ids, color, enabled: true, slug: slug ?? undefined }]);
     setFriendName("");
     setFriendLink("");
   };
   const removeFriend = (idx: number) => setFriends((p) => p.filter((_, i) => i !== idx));
   const toggleFriend = (idx: number) =>
     setFriends((p) => p.map((f, i) => (i === idx ? { ...f, enabled: !isFriendOn(f) } : f)));
+
+  // Sharing is two-way: friends who sent a LIVE link are re-resolved on load, so
+  // their edits show up here instead of freezing at the moment you pasted it.
+  // One batched request per load. If a friend's link is revoked we keep their
+  // last-known picks (so the timeline doesn't silently empty) and flag it.
+  const refreshedSlugs = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const pending = Array.from(
+      new Set(
+        friends
+          .map((f) => f.slug)
+          .filter((s): s is string => !!s && !refreshedSlugs.current.has(s)),
+      ),
+    );
+    if (pending.length === 0) return;
+    pending.forEach((s) => refreshedSlugs.current.add(s));
+
+    let cancelled = false;
+    fetch("/api/share/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slugs: pending }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { results?: Record<string, { ids?: string[] } | null> } | null) => {
+        if (cancelled || !data?.results) return;
+        setFriends((prev) => {
+          let changed = false;
+          const next = prev.map((f) => {
+            if (!f.slug || !(f.slug in data.results!)) return f;
+            const rec = data.results![f.slug];
+            if (rec === null) {
+              // Link turned off by its owner — keep what we last saw, mark it.
+              if (f.dead) return f;
+              changed = true;
+              return { ...f, dead: true };
+            }
+            const ids = (rec.ids ?? []).filter((x) => validIds.has(x));
+            const same = ids.length === f.ids.length && ids.every((x, i) => x === f.ids[i]);
+            if (same && !f.dead) return f;
+            changed = true;
+            return { ...f, ids: same ? f.ids : ids, dead: false };
+          });
+          return changed ? next : prev; // don't churn state (or re-POST friends) for a no-op
+        });
+      })
+      .catch(() => {
+        // Network hiccup — allow a retry on the next render pass.
+        pending.forEach((s) => refreshedSlugs.current.delete(s));
+      });
+    return () => {
+      cancelled = true;
+    };
+    // setFriends is a stable setState wrapper; excluded intentionally.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [friends, validIds]);
 
   // For the active day, which friends are on each set (only ones toggled on).
   const friendsOnSet = (id: string) =>
@@ -413,7 +619,8 @@ export default function ScheduleClient({
           <p style={{ fontSize: "0.82rem", color: "#8a8a94", margin: "0 0 0.6rem" }}>
             Ask a friend to hit <strong>🔗 Share schedule → Copy link</strong> and send it to you. Paste it here and
             they&apos;re saved — each gets their own dot color on the timeline, and you can show or hide
-            any friend&apos;s sets anytime.
+            any friend&apos;s sets anytime. Links marked <span style={{ color: "#5cffd3" }}>● live</span> refresh
+            every time you open this page, so you see their latest plan, not the one they sent.
           </p>
           <p style={{ fontSize: "0.78rem", color: signedIn ? "#5cffd3" : "#8a8a94", margin: "0 0 0.6rem" }}>
             {signedIn ? (
@@ -443,6 +650,10 @@ export default function ScheduleClient({
                     <strong>{f.name}</strong>
                     <span style={{ color: "#8a8a94", fontSize: "0.82rem" }}>
                       {overlap.length} set{overlap.length === 1 ? "" : "s"} together · {f.ids.length} total
+                      {f.slug && !f.dead && <span style={{ color: "#5cffd3" }}> · ● live</span>}
+                      {f.slug && f.dead && (
+                        <span title="They turned their link off — showing what we last saw."> · link off</span>
+                      )}
                     </span>
                     <button
                       onClick={() => toggleFriend(i)}
@@ -538,7 +749,12 @@ export default function ScheduleClient({
           <button
             className="btn"
             style={{ background: copied ? "#1db954" : "#26262f", color: copied ? "#06210f" : undefined }}
-            onClick={() => setShareOpen((o) => !o)}
+            onClick={() => {
+              const next = !shareOpen;
+              setShareOpen(next);
+              // Publish on open so the URL exists before Copy is clicked.
+              if (next) void ensureLiveLink();
+            }}
             aria-expanded={shareOpen}
           >
             {copied ? "✓ Copied!" : "🔗 Share schedule"} <span style={{ fontSize: "0.7em", opacity: 0.8 }}>▾</span>
@@ -589,6 +805,32 @@ export default function ScheduleClient({
                 </button>
                 {shareSets.length === 0 && (
                   <p style={{ fontSize: "0.72rem", color: "#8a8a94", margin: "0.5rem 0 0", textAlign: "center" }}>Pick at least one to share.</p>
+                )}
+
+                {/* Live-link status. The whole point of the feature is that the
+                    link keeps updating, so say so — and give a way to stop. */}
+                {liveSlug && (
+                  <div style={{ marginTop: "0.6rem", fontSize: "0.72rem", color: "#8a8a94" }}>
+                    <div style={{ color: "#5cffd3", marginBottom: 4 }}>
+                      ● Live link — updates by itself when you change your schedule.
+                    </div>
+                    <button
+                      onClick={stopSharing}
+                      disabled={shareBusy}
+                      style={{
+                        background: "none", border: "none", padding: 0, cursor: "pointer",
+                        color: "#ff8a5c", fontSize: "0.72rem", textDecoration: "underline",
+                        opacity: shareBusy ? 0.5 : 1,
+                      }}
+                    >
+                      Stop sharing (turns the link off for everyone)
+                    </button>
+                  </div>
+                )}
+                {liveFailed && !liveSlug && shareSets.length > 0 && (
+                  <p style={{ fontSize: "0.72rem", color: "#8a8a94", margin: "0.6rem 0 0" }}>
+                    Couldn&apos;t start a live link right now — this copies a fixed snapshot instead.
+                  </p>
                 )}
               </div>
             </>

@@ -15,6 +15,11 @@ export type StoredFriend = {
   ids: string[];
   color?: string;
   enabled?: boolean;
+  // Set when they shared a LIVE link (/share/<slug>): we keep the slug so the
+  // client can re-resolve their CURRENT picks on every load instead of showing
+  // the snapshot taken when the link was pasted. `ids` stays populated as the
+  // last-known value, so the timeline still renders if the refresh fails.
+  slug?: string;
 };
 
 const accountKey = (email: string) => `friends:user:${email}`;

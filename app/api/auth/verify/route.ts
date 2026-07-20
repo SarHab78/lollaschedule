@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeEmail, verifyCode } from "@/lib/otp";
 import { makeSessionToken, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/session";
 import { clientIp, rateLimit, sameOrigin } from "@/lib/security";
+import { adoptShareOnSignIn } from "@/lib/sharelink";
+import { MANUAL_COOKIE } from "@/lib/manual";
 
 // POST { email, code } → verifies the code and, on success, sets the signed
 // session cookie. From then on the visitor's picks key off their email.
@@ -32,6 +34,12 @@ export async function POST(req: NextRequest) {
 
   const result = await verifyCode(email, code);
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
+
+  // Carry any live share link created anonymously on this device over to the
+  // account, so a link already handed out to friends keeps working (and keeps
+  // updating) after signing in. Mirrors the pick migration in lib/manual.ts.
+  const deviceId = req.cookies.get(MANUAL_COOKIE)?.value;
+  if (deviceId) await adoptShareOnSignIn(email, deviceId);
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, makeSessionToken(email), {
